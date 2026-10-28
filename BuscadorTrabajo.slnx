@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="BuscadorTrabajo.API/BuscadorTrabajo.API.csproj" />
+  <Project Path="BuscadorTrabajo.Shared/BuscadorTrabajo.Shared.csproj" />
+  <Project Path="BuscadorTrabajo.WEB/BuscadorTrabajo.WEB.csproj" />
+</Solution>

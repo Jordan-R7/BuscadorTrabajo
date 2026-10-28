@@ -50,6 +50,7 @@ namespace BuscadorTrabajo.Shared.Entities
         [Display(Name = "Estado")] //Aqui va el estado de la publicacion, si esta activa o inactiva
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
         [MaxLength(20, ErrorMessage = "El estado no puede tener más de 20 caracteres")]
+        [RegularExpression("^(CREADA|PUBLICADA|VENCIDA|OCULTA)$", ErrorMessage = "El estado debe ser CREADA, PUBLICADA, VENCIDA o OCULTA")]
         public string Estado { get; set; }
 
 

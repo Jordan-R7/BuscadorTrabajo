@@ -47,7 +47,7 @@ namespace BuscadorTrabajo.API.Controllers
             return Ok(publicacion);
         }
 
-       
+        [HttpPut]
         public async Task<ActionResult> Put(Publicacion publicacion)
         {
             _context.Update(publicacion);

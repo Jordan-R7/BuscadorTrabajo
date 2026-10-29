@@ -47,7 +47,7 @@ namespace BuscadorTrabajo.API.Controllers
             return Ok(certificacion);
         }
 
-       
+        [HttpPut]
         public async Task<ActionResult> Put(Certificacion certificacion)
         {
             _context.Update(certificacion);

@@ -47,7 +47,7 @@ namespace BuscadorTrabajo.API.Controllers
             return Ok(perfiles_profesional);
         }
 
-       
+        [HttpPut]
         public async Task<ActionResult> Put(PerfilesProfesional perfiles_profesional)
         {
             _context.Update(perfiles_profesional);

@@ -47,9 +47,9 @@ namespace BuscadorTrabajo.API.Controllers
             return Ok(aplicacion);
         }
 
-
-        public async Task<ActionResult> Put(Aplicacion aplicacion)
-        {
+        [HttpPut]
+        public async Task<ActionResult> Put(int id, Aplicacion aplicacion)
+        { 
             _context.Update(aplicacion);
             await _context.SaveChangesAsync();
             return Ok(aplicacion);

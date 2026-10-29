@@ -31,6 +31,10 @@ namespace BuscadorTrabajo.Shared.Entities
         [DataType(DataType.Date)]
         public DateOnly FechaEmision { get; set; }
 
+        [Display(Name = "Fecha de Vencimiento")]
+        [DataType(DataType.Date)]
+        public DateOnly? FechaVencimiento { get; set; }
+
         [Display(Name = "Url del Certificado ")]
         [MaxLength(300, ErrorMessage = "La Url del Certificado no puede tener más de 300 caracteres")]
         public string UrlCertificado { get; set; }

@@ -34,7 +34,7 @@ namespace BuscadorTrabajo.Shared.Entities
         
         [Display(Name = "Estado")]//Aqui va el estado de la aplicacion, si esta aceptada, rechazada o en espera
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
-        [MaxLength(10, ErrorMessage = "El Estado no puede tener más de 10 caracteres")]
+        [MaxLength(20, ErrorMessage = "El Estado no puede tener más de 20 caracteres")]
         [RegularExpression("^(PENDIENTE|EN_REVISION|ACEPTADA|RECHAZADA|RETIRADA)$", ErrorMessage = "El estado debe ser PENDIENTE, EN_REVISION, ACEPTADA, RECHAZADA o RETIRADA")]
         public string Estado { get; set; }
 

@@ -8,6 +8,8 @@ namespace BuscadorTrabajo.Shared.Entities
 {
     public class Publicacion_Habilidad
     {
+        public int Id { get; set; }
+
         [Display(Name = "Id Publicacion")]//FK]
         public int IdPublicacion { get; set; }
         [JsonIgnore]

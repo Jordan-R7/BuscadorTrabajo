@@ -8,6 +8,8 @@ namespace BuscadorTrabajo.Shared.Entities
 {
     public class Perfil_Habilidad
     {
+        public int Id { get; set; }
+
         [Display(Name = "Perfil Profesional")]//FK
         public int IdPerfilProfesional { get; set; }
         [JsonIgnore]

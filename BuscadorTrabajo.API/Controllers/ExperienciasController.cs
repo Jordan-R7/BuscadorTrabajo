@@ -1,5 +1,6 @@
 ﻿using BuscadorTrabajo.API.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using BuscadorTrabajo.Shared.Entities;
 
 namespace BuscadorTrabajo.API.Controllers

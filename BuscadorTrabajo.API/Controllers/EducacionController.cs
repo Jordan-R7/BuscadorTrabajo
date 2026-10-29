@@ -1,5 +1,6 @@
 ﻿using BuscadorTrabajo.API.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using BuscadorTrabajo.Shared.Entities;
 
 namespace BuscadorTrabajo.API.Controllers
@@ -20,7 +21,7 @@ namespace BuscadorTrabajo.API.Controllers
         public async Task<ActionResult> Get()
         {
 
-            return Ok(await _context.Educacion.ToListAsync());
+            return Ok(await _context.Educaciones.ToListAsync());
 
 
         }
@@ -29,7 +30,7 @@ namespace BuscadorTrabajo.API.Controllers
         public async Task<ActionResult> Get(int id)
         {
 
-            var educacion = await _context.Educacion.FirstOrDefaultAsync(x => x.Id == id);
+            var educacion = await _context.Educaciones.FirstOrDefaultAsync(x => x.Id == id);
             if (educacion == null)
             {
                 return NotFound(); //404
@@ -58,7 +59,7 @@ namespace BuscadorTrabajo.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {
-            var Educacion = await _context.Educacion.FirstOrDefaultAsync(x => x.Id == id);
+            var Educacion = await _context.Educaciones.FirstOrDefaultAsync(x => x.Id == id);
             if (Educacion == null)
             {
                 return NotFound(); //404

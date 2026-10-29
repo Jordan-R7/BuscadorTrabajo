@@ -1,5 +1,6 @@
 ﻿using BuscadorTrabajo.API.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using BuscadorTrabajo.Shared.Entities;
 
 namespace BuscadorTrabajo.API.Controllers
@@ -40,7 +41,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post(Publicacion_habilidad publicacion_habilidad)
+        public async Task<ActionResult> Post(Publicacion_Habilidad publicacion_habilidad)
         {
             _context.Add(publicacion_habilidad);
             await _context.SaveChangesAsync();
@@ -48,7 +49,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         [HttpPut]
-        public async Task<ActionResult> Put(Publicacion_habilidad publicacion_habilidad)
+        public async Task<ActionResult> Put(Publicacion_Habilidad publicacion_habilidad)
         {
             _context.Update(publicacion_habilidad);
             await _context.SaveChangesAsync();

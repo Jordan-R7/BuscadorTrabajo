@@ -1,7 +1,8 @@
 ﻿using BuscadorTrabajo.API.Data;
+using BuscadorTrabajo.API.Helpers;
+using BuscadorTrabajo.Shared.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using BuscadorTrabajo.Shared.Entities;
 
 namespace BuscadorTrabajo.API.Controllers
 {
@@ -9,158 +10,154 @@ namespace BuscadorTrabajo.API.Controllers
     [Route("/api/perfilesprofesionales")]
     public class PerfilesProfesionalesController : ControllerBase
     {
-     
-        private readonly DataContext  _context;
+        private readonly DataContext _context;
 
         public PerfilesProfesionalesController(DataContext context)
         {
             _context = context;
         }
 
+        // GET /api/perfilesprofesionales
         [HttpGet]
         public async Task<ActionResult> Get()
         {
-
-            return Ok(await _context.PerfilesProfesionales.ToListAsync());
-
-
+            return Ok(await _context.PerfilesProfesionales
+                .AsNoTracking()
+                .OrderBy(x => x.Id)
+                .ToListAsync());
         }
 
-        [HttpGet("{Id:int}")]
-        public async Task<ActionResult> Get(int id)
-        {
-
-            var perfiles_profesional = await _context.PerfilesProfesionales.FirstOrDefaultAsync(x => x.Id == id);
-            if (perfiles_profesional == null)
-            {
-                return NotFound(); //404
-            }
-            return Ok(perfiles_profesional);
-
-
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> Post(PerfilProfesional perfiles_profesional)
-        {
-            _context.Add(perfiles_profesional);
-            await _context.SaveChangesAsync();
-            return Ok(perfiles_profesional);
-        }
-
-        [HttpPut]
-        public async Task<ActionResult> Put(PerfilProfesional perfiles_profesional)
-        {
-            _context.Update(perfiles_profesional);
-            await _context.SaveChangesAsync();
-            return Ok(perfiles_profesional);
-        }
-
-        [HttpDelete("{id:int}")]
-        public async Task<ActionResult> Delete(int id)
-        {
-            var PerfilesProfesional = await _context.PerfilesProfesionales.FirstOrDefaultAsync(x => x.Id == id);
-            if (PerfilesProfesional == null)
-            {
-                return NotFound(); //404
-            }
-            _context.Remove(PerfilesProfesional);
-            await _context.SaveChangesAsync();
-            return NoContent(); //204
-        }
-
-        /*
-
+        // GET /api/perfilesprofesionales/paginated?page=1&pageSize=5
         [HttpGet("paginated")]
         public async Task<ActionResult> GetPaginated(int page = 1, int pageSize = 5)
         {
-
-
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 5;
             if (pageSize > 50) pageSize = 50;
-            var query = _context.Publicaciones
-            .AsNoTracking()//AsNoTracking() is used to improve performance when you don't need to track changes to the entities
-            .OrderBy(x => x.Id);
 
-            var totalRecords = await query.CountAsync(); //CountAsync() is used to get the total number of records in the query
+            var query = _context.PerfilesProfesionales
+                .AsNoTracking()
+                .OrderBy(x => x.Id);
+
+            var totalRecords = await query.CountAsync(); // Cuenta todos los registros
 
             var data = await query
-                .Skip((page - 1) * pageSize) //Skip() is used to skip the records that are not needed for the current page
-                .Take(pageSize)//Take() is used to take the records that are needed for the current page
-                .ToListAsync();//ToListAsync() is used to execute the query and get the results as a list1
+                .Skip((page - 1) * pageSize) // Omite los registros de las páginas anteriores
+                .Take(pageSize)              // Toma solo los de la página pedida
+                .ToListAsync();
 
-            var totalPages =
-            (int)Math.Ceiling(totalRecords / (double)pageSize); //Math.Ceiling() is used to round up the total number of pages  
-
+            var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
 
             return Ok(new
             {
-                TotalRecords = totalRecords, //TotalRecords is used to get the total number of records in the query
-                TotalPages = totalPages, //TotalPages is used to get the total number of pages
-                Page = page, //Page is used to get the current page
-                PageSize = pageSize, //PageSize is used to get the number of records per page
-                Data = data //Data is used to get the records for the current page
+                page,
+                pageSize,
+                totalRecords,
+                totalPages,
+                data
             });
-
-
         }
 
-
-        [HttpGet("filter")]
-        public async Task<ActionResult> GetFiltered(string text)
+        // GET /api/perfilesprofesionales/5
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult> Get(int id)
         {
-
-            var query = _context.Publicaciones
-
-            .AsNoTracking()//AsNoTracking() is used to improve performance when you don't need to track changes to the entities 
-            .AsQueryable(); //AsQueryable() is used to create a query that can be filtered
-
-
-            if (!string.IsNullOrWhiteSpace(text)) //Check if the text is not null or empty
-            {
-                text = text.Trim().ToLower(); //Trim() is used to remove the white spaces from the text and ToLower() is used to convert the text to lower case
-                query = query.Where(x => //select * from Owners where FirstName like '%text%' or LastName like '%text%' or Document like '%text%'
-              x.FirstName.ToLower().Contains(text) ||//Where() is used to filter the query and Contains() is used to check if the text is contained in the first name
-              x.LastName.ToLower().Contains(text) ||//Where() is used to filter the query and Contains()
-              x.Document.ToLower().Contains(text));  //Where() is used to filter the query and Contains()
-
-
-
-            }
-
-            var data = await query
-                .OrderBy(x => x.FirstName) //OrderBy() is used to order the query by first name
-                .ThenBy(x => x.LastName) //ThenBy() is used to order the query by last name
-                .ToListAsync(); //ToListAsync() is used to execute the query and get the results as a list
-
-            return Ok(data);
-        }
-
-        [HttpGet("{id:int}/hateoas")]
-        public async Task<ActionResult> GetwithLinks(int id)
-        {
-            var publicacion = await _context.Publicaciones
+            var perfil = await _context.PerfilesProfesionales
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
-            if (publicacion == null)
+
+            if (perfil == null)
             {
-                return NotFound(); //404
+                return NotFound("No existe un perfil profesional con ese Id."); //404
             }
-            var response = new
-            {
-                publicacion,
-                links = new List<object>
-                {
-                    new { rel = "self", href = Url.Action("Get", new { id = publicacion.Id }) },
-                    new { rel = "update", href = Url.Action("Put") },
-                    new { rel = "delete", href = Url.Action("Delete", new { id = publicacion.Id }) }
-                }
-            };
-            return Ok(response);
+
+            return Ok(perfil);
         }
 
-        */
+        // POST /api/perfilesprofesionales
+        [HttpPost]
+        public async Task<ActionResult> Post(PerfilProfesional perfil)
+        {
+            perfil.Id = 0; // El Id lo genera la base de datos
 
+            var error = await ValidarAsync(perfil);
+            if (error != null)
+            {
+                return BadRequest(error); //400
+            }
+
+            try
+            {
+                _context.Add(perfil);
+                await _context.SaveChangesAsync();
+                return Ok(perfil);
+            }
+            catch (DbUpdateException ex) when (ErroresBaseDatos.EsDuplicado(ex))
+            {
+                return Conflict("Este desarrollador ya tiene un perfil profesional."); //409
+            }
+        }
+
+        // PUT /api/perfilesprofesionales
+        [HttpPut]
+        public async Task<ActionResult> Put(PerfilProfesional perfil)
+        {
+            var existe = await _context.PerfilesProfesionales.AnyAsync(x => x.Id == perfil.Id);
+            if (!existe)
+            {
+                return NotFound("No existe un perfil profesional con ese Id."); //404
+            }
+
+            var error = await ValidarAsync(perfil);
+            if (error != null)
+            {
+                return BadRequest(error); //400
+            }
+
+            try
+            {
+                _context.Update(perfil);
+                await _context.SaveChangesAsync();
+                return Ok(perfil);
+            }
+            catch (DbUpdateException ex) when (ErroresBaseDatos.EsDuplicado(ex))
+            {
+                return Conflict("Este desarrollador ya tiene un perfil profesional."); //409
+            }
+        }
+
+        // DELETE /api/perfilesprofesionales/5
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            var perfil = await _context.PerfilesProfesionales.FirstOrDefaultAsync(x => x.Id == id);
+            if (perfil == null)
+            {
+                return NotFound("No existe un perfil profesional con ese Id."); //404
+            }
+
+            try
+            {
+                _context.Remove(perfil);
+                await _context.SaveChangesAsync();
+                return NoContent(); //204
+            }
+            catch (DbUpdateException ex) when (ErroresBaseDatos.EsRelacion(ex))
+            {
+                return Conflict("No se puede eliminar el perfil profesional."); //409
+            }
+        }
+
+        // Reglas que necesitan consultar la base de datos antes de guardar.
+        // Devuelve el mensaje de error, o null si todo está bien.
+        private async Task<string> ValidarAsync(PerfilProfesional perfil)
+        {
+            if (!await _context.Desarrolladores.AnyAsync(x => x.Id == perfil.IdDesarrollador))
+            {
+                return "El desarrollador indicado no existe."; // RN07
+            }
+
+            return null;
+        }
     }
 }

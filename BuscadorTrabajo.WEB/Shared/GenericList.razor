@@ -1,0 +1,49 @@
+﻿@typeparam Titem
+
+@* Lista genérica: muestra "Cargando", "No hay registros" o el contenido según el estado de la lista. *@
+
+@if (MyList is null)
+{
+    @if (Loading is null)
+    {
+        <div class="d-flex align-items-center gap-2 my-3">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span>Cargando...</span>
+        </div>
+    }
+    else
+    {
+        @Loading
+    }
+}
+else if (MyList.Count == 0)
+{
+    @if (NoRecords is null)
+    {
+        <p>No hay registros para mostrar.</p>
+    }
+    else
+    {
+        @NoRecords
+    }
+}
+else
+{
+    @Body
+}
+
+@code {
+    [Parameter]
+    public RenderFragment Loading { get; set; }
+
+    [Parameter]
+    public RenderFragment NoRecords { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public RenderFragment Body { get; set; } = null!;
+
+    [Parameter]
+    [EditorRequired]
+    public List<Titem> MyList { get; set; } = null!;
+}

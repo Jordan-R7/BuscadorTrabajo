@@ -9,6 +9,7 @@ namespace BuscadorTrabajo.Shared.Entities
 
         [Display(Name = "ID Desarrollador")] //FK
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
+        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un desarrollador válido.")]
         public int IdDesarrollador { get; set; }
 
         [JsonIgnore]

@@ -21,6 +21,7 @@ namespace BuscadorTrabajo.Shared.Entities
 
 
         [Display(Name = "IdCategoría")]
+        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar una categoría válida.")]
         public int IdCategoria { get; set; }
 
         [JsonIgnore]

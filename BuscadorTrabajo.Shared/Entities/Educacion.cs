@@ -6,11 +6,12 @@ using System.Text.Json.Serialization;
 
 namespace BuscadorTrabajo.Shared.Entities
 {
-    public class Educacion
+    public class Educacion : IValidatableObject
     {
         public int Id { get; set; }
 
         [Display(Name = "Perfil Profesional")]//FK
+        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un perfil profesional válido.")]
         public int IdPerfilProfesional { get; set; }
 
         [JsonIgnore]
@@ -44,5 +45,27 @@ namespace BuscadorTrabajo.Shared.Entities
 
         [Display(Name = "En Curso")]
         public bool EnCurso { get; set; }
+
+        // Reglas que comparan varios campos
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            // RN10: la fecha de inicio es obligatoria
+            if (FechaInicio == default)
+            {
+                yield return new ValidationResult("La fecha de inicio es obligatoria.", new[] { nameof(FechaInicio) });
+            }
+
+            // RN10: la fecha de fin no puede ser anterior a la de inicio
+            if (FechaFin != null && FechaFin < FechaInicio)
+            {
+                yield return new ValidationResult("La fecha de fin no puede ser anterior a la fecha de inicio.", new[] { nameof(FechaFin) });
+            }
+
+            // RN11: si está en curso, no lleva fecha de fin
+            if (EnCurso && FechaFin != null)
+            {
+                yield return new ValidationResult("Si la formación está en curso, la fecha de fin debe quedar vacía.", new[] { nameof(FechaFin) });
+            }
+        }
     }
 }

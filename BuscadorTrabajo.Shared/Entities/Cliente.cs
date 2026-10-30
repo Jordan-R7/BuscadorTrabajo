@@ -8,6 +8,7 @@ namespace BuscadorTrabajo.Shared.Entities
 
         [Display(Name = "Cédula")]
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
+        [MinLength(6, ErrorMessage = "La Cédula debe tener al menos 6 dígitos")]
         [MaxLength(10, ErrorMessage = "La Cédula no puede tener más de 10 caracteres")]
         [RegularExpression(@"^\d+$",ErrorMessage = "La cédula solo debe contener números")]
         public string Cedula { get; set; }

@@ -8,6 +8,7 @@ namespace BuscadorTrabajo.Shared.Entities
         public int Id { get; set; }
 
         [Display(Name = "ID Publicacion")]//FK
+        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar una publicación válida.")]
         public int IdPublicacion { get; set; }
 
         [JsonIgnore]
@@ -16,6 +17,7 @@ namespace BuscadorTrabajo.Shared.Entities
 
         [Display(Name = "ID Desarrollador")]//FK
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
+        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un desarrollador válido.")]
         public int IdDesarrollador { get; set; }
 
         [JsonIgnore]
@@ -36,7 +38,7 @@ namespace BuscadorTrabajo.Shared.Entities
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
         [MaxLength(20, ErrorMessage = "El Estado no puede tener más de 20 caracteres")]
         [RegularExpression("^(PENDIENTE|EN_REVISION|ACEPTADA|RECHAZADA|RETIRADA)$", ErrorMessage = "El estado debe ser PENDIENTE, EN_REVISION, ACEPTADA, RECHAZADA o RETIRADA")]
-        public string Estado { get; set; }
+        public string Estado { get; set; } = "PENDIENTE"; // Toda aplicación empieza pendiente (RN31)
 
 
         [Display(Name = "Plazo Estimado")] //Aqui va el plazo en dias que se tiene para la publicacion este solo aplica para trabajos freelance

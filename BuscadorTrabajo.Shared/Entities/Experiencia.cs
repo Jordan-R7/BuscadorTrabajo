@@ -6,10 +6,12 @@ using System.Text.Json.Serialization;
 
 namespace BuscadorTrabajo.Shared.Entities
 {
-    public class Experiencia
+    public class Experiencia : IValidatableObject
     {
         public int Id { get; set; }
 
+        [Display(Name = "Perfil Profesional")]//FK
+        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un perfil profesional válido.")]
         public int IdPerfilProfesional { get; set; }
 
         [JsonIgnore]
@@ -40,5 +42,31 @@ namespace BuscadorTrabajo.Shared.Entities
 
         [Display(Name = "Estado Actual")]
         public bool EstadoActual { get; set; }
+
+        // Reglas que comparan varios campos
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            // RN10: la fecha de inicio es obligatoria y no puede ser futura
+            if (FechaInicio == default)
+            {
+                yield return new ValidationResult("La fecha de inicio es obligatoria.", new[] { nameof(FechaInicio) });
+            }
+            else if (FechaInicio > DateOnly.FromDateTime(DateTime.Today))
+            {
+                yield return new ValidationResult("La fecha de inicio no puede ser posterior a hoy.", new[] { nameof(FechaInicio) });
+            }
+
+            // RN10: la fecha de fin no puede ser anterior a la de inicio
+            if (FechaFin != null && FechaFin < FechaInicio)
+            {
+                yield return new ValidationResult("La fecha de fin no puede ser anterior a la fecha de inicio.", new[] { nameof(FechaFin) });
+            }
+
+            // RN11: si es el trabajo actual, no lleva fecha de fin
+            if (EstadoActual && FechaFin != null)
+            {
+                yield return new ValidationResult("Si es el trabajo actual, la fecha de fin debe quedar vacía.", new[] { nameof(FechaFin) });
+            }
+        }
     }
 }

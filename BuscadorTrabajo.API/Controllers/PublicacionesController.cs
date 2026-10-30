@@ -138,6 +138,17 @@ namespace BuscadorTrabajo.API.Controllers
                 return BadRequest($"Una publicación no puede pasar de {actual.Estado} a {publicacion.Estado}."); //400
             }
 
+            // Si ya tiene aplicaciones, no se puede cambiar su tipo ni su propietario,
+            // porque las aplicaciones existentes quedarían incoherentes (RN30)
+            var tieneAplicaciones = await _context.Aplicaciones.AnyAsync(x => x.IdPublicacion == publicacion.Id);
+            if (tieneAplicaciones
+                && (actual.Tipo != publicacion.Tipo
+                    || actual.IdEmpresa != publicacion.IdEmpresa
+                    || actual.IdCliente != publicacion.IdCliente))
+            {
+                return BadRequest("No se puede cambiar el tipo ni el propietario de una publicación que ya tiene aplicaciones."); //400
+            }
+
             if (publicacion.Estado == "PUBLICADA" && publicacion.FechaPublicacion == null)
             {
                 publicacion.FechaPublicacion = DateOnly.FromDateTime(DateTime.Today);

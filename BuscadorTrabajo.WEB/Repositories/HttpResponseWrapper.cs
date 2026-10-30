@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.Json;
 
 namespace BuscadorTrabajo.WEB.Repositories
 {
@@ -27,13 +28,19 @@ namespace BuscadorTrabajo.WEB.Repositories
             }
 
             var codigoEstatus = HttpResponseMessage.StatusCode;
+            var contenido = await HttpResponseMessage.Content.ReadAsStringAsync();
+
             if (codigoEstatus == HttpStatusCode.NotFound)
             {
-                return "Recurso no encontrado.";
+                return ExtraerMensaje(contenido, "Recurso no encontrado.");
             }
             else if (codigoEstatus == HttpStatusCode.BadRequest)
             {
-                return await HttpResponseMessage.Content.ReadAsStringAsync();
+                return ExtraerMensaje(contenido, "Los datos enviados no son válidos.");
+            }
+            else if (codigoEstatus == HttpStatusCode.Conflict)
+            {
+                return ExtraerMensaje(contenido, "La operación entra en conflicto con otro registro.");
             }
             else if (codigoEstatus == HttpStatusCode.Unauthorized)
             {
@@ -45,6 +52,49 @@ namespace BuscadorTrabajo.WEB.Repositories
             }
 
             return "Ha ocurrido un error inesperado.";
+        }
+
+        // El API responde un texto simple (por ejemplo "Ya existe una categoría con ese nombre.")
+        // o un JSON con la lista de errores de validación. Aquí se obtiene un mensaje legible de ambos.
+        private static string ExtraerMensaje(string contenido, string mensajePorDefecto)
+        {
+            if (string.IsNullOrWhiteSpace(contenido))
+            {
+                return mensajePorDefecto;
+            }
+
+            contenido = contenido.Trim();
+            if (!contenido.StartsWith("{"))
+            {
+                return contenido.Trim('"');
+            }
+
+            try
+            {
+                using var documento = JsonDocument.Parse(contenido);
+                if (documento.RootElement.TryGetProperty("errors", out var errores)
+                    && errores.ValueKind == JsonValueKind.Object)
+                {
+                    var mensajes = new List<string>();
+                    foreach (var campo in errores.EnumerateObject())
+                    {
+                        foreach (var mensaje in campo.Value.EnumerateArray())
+                        {
+                            mensajes.Add(mensaje.GetString());
+                        }
+                    }
+
+                    if (mensajes.Count > 0)
+                    {
+                        return string.Join(" ", mensajes);
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+            }
+
+            return mensajePorDefecto;
         }
     }
 }

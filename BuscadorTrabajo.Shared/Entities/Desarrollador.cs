@@ -2,12 +2,13 @@
 
 namespace BuscadorTrabajo.Shared.Entities
 {
-    public class Desarrollador
+    public class Desarrollador : IValidatableObject
     {
         public int Id { get; set; }
 
         [Display(Name = "Cédula")]
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
+        [MinLength(6, ErrorMessage = "La Cédula debe tener al menos 6 dígitos")]
         [MaxLength(10, ErrorMessage = "La Cédula no puede tener más de 10 caracteres")]
         [RegularExpression(@"^\d+$", ErrorMessage = "La cédula solo debe contener números")]
         public string Cedula { get; set; }
@@ -39,5 +40,18 @@ namespace BuscadorTrabajo.Shared.Entities
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
         [DataType(DataType.Date, ErrorMessage = "El campo {0} debe ser una fecha válida")]
         public DateOnly FechaNacimiento { get; set; }
+
+        // Reglas que comparan varios campos
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (FechaNacimiento == default)
+            {
+                yield return new ValidationResult("La fecha de nacimiento es obligatoria.", new[] { nameof(FechaNacimiento) });
+            }
+            else if (FechaNacimiento > DateOnly.FromDateTime(DateTime.Today))
+            {
+                yield return new ValidationResult("La fecha de nacimiento no puede ser futura.", new[] { nameof(FechaNacimiento) });
+            }
+        }
     }
 }

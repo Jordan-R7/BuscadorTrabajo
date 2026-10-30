@@ -68,12 +68,12 @@ namespace BuscadorTrabajo.Shared.Entities
 
 
         [Display(Name = "Presupuesto")] //Aqui va el presupuesto que se tiene para la publicacion este solo aplica para trabajos freelance
-        [Range(typeof(decimal), "0", "999999999999.99",ErrorMessage = "El presupuesto debe ser un valor válido y no negativo")]
+        [Range(typeof(decimal), "0", "999999999999.99", ParseLimitsInInvariantCulture = true, ErrorMessage = "El presupuesto debe ser un valor válido y no negativo")]
         public decimal? Presupuesto { get; set; }
 
 
         [Display(Name = "Salario")] //Aqui va el salario que se tiene para la publicacion este solo aplica para trabajos de tiempo completo
-        [Range(typeof(decimal), "0", "999999999999.99", ErrorMessage = "El salario debe ser un valor válido y no negativo")]
+        [Range(typeof(decimal), "0", "999999999999.99", ParseLimitsInInvariantCulture = true, ErrorMessage = "El salario debe ser un valor válido y no negativo")]
         public decimal? Salario { get; set; }
 
 

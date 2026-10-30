@@ -1,0 +1,66 @@
+﻿@page "/categorias/edit/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar categoría</PageTitle>
+
+<h3>Editar categoría</h3>
+
+@if (categoria is null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <CategoriaForm @ref="categoriaForm" Categoria="categoria" OnSubmit="EditAsync" ReturnAction="Return" />
+}
+
+@code {
+    private Categoria categoria;
+    private CategoriaForm categoriaForm;
+
+    // Llega desde la dirección: /categorias/edit/5
+    [Parameter]
+    public int Id { get; set; }
+
+    // Trae la categoría a editar: GET /api/categorias/{id}
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.GetAsync<Categoria>($"/api/categorias/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/categorias");
+                return;
+            }
+
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        categoria = responseHttp.Response;
+    }
+
+    // Guarda los cambios: PUT /api/categorias
+    private async Task EditAsync()
+    {
+        var responseHttp = await repository.PutAsync("/api/categorias", categoria);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        categoriaForm!.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/categorias");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/categorias");
+    }
+}

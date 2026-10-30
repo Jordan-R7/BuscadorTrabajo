@@ -1,0 +1,92 @@
+﻿@page "/categorias"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Categorías</PageTitle>
+
+<h3>Categorías</h3>
+
+<div class="mb-3">
+    <a class="btn btn-primary" href="/categorias/create">Nueva categoría</a>
+</div>
+
+<GenericList MyList="Categorias">
+    <Body>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th style="width: 180px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var categoria in Categorias!)
+                {
+                    <tr>
+                        <td>@categoria.Nombre</td>
+                        <td>@categoria.Descripcion</td>
+                        <td>
+                            <a href="/categorias/edit/@categoria.Id" class="btn btn-warning btn-sm">Editar</a>
+                            <button class="btn btn-danger btn-sm" @onclick=@(() => DeleteAsync(categoria))>Borrar</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </Body>
+</GenericList>
+
+@code {
+    public List<Categoria> Categorias { get; set; }
+
+    // Se ejecuta cuando se abre la página
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    // Pide la lista al API: GET /api/categorias
+    private async Task LoadAsync()
+    {
+        var responseHttp = await repository.GetAsync<List<Categoria>>("/api/categorias");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            Categorias = new List<Categoria>();
+            return;
+        }
+
+        Categorias = responseHttp.Response;
+    }
+
+    // Pide confirmación y borra: DELETE /api/categorias/{id}
+    private async Task DeleteAsync(Categoria categoria)
+    {
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Seguro que quieres borrar la categoría {categoria.Nombre}?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true
+        });
+
+        var cancelado = string.IsNullOrEmpty(result.Value);
+        if (cancelado)
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/categorias/{categoria.Id}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoadAsync();
+    }
+}

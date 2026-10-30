@@ -43,17 +43,31 @@ namespace BuscadorTrabajo.API.Controllers
         [HttpPost]
         public async Task<ActionResult> Post(Categoria categoria)
         {
-            _context.Add(categoria);
-            await _context.SaveChangesAsync();
-            return Ok(categoria);
+            try
+            {
+                _context.Add(categoria);
+                await _context.SaveChangesAsync();
+                return Ok(categoria);
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest("Ya existe una categoría con ese nombre."); //400 (RN13)
+            }
         }
 
         [HttpPut]
         public async Task<ActionResult> Put(Categoria categoria)
         {
-            _context.Update(categoria);
-            await _context.SaveChangesAsync();
-            return Ok(categoria);
+            try
+            {
+                _context.Update(categoria);
+                await _context.SaveChangesAsync();
+                return Ok(categoria);
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest("Ya existe una categoría con ese nombre."); //400 (RN13)
+            }
         }
 
         [HttpDelete("{id:int}")]
@@ -64,9 +78,16 @@ namespace BuscadorTrabajo.API.Controllers
             {
                 return NotFound(); //404
             }
-            _context.Remove(Categoria);
-            await _context.SaveChangesAsync();
-            return NoContent(); //204
+            try
+            {
+                _context.Remove(Categoria);
+                await _context.SaveChangesAsync();
+                return NoContent(); //204
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest("No se puede eliminar la categoría porque tiene habilidades o publicaciones asociadas."); //400 (RN16)
+            }
         }
 
         /*

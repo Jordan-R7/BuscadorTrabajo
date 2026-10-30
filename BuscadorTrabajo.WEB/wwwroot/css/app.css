@@ -134,3 +134,95 @@ body {
     background-color: #f7f8fc;
     color: #1e293b;
 }
+
+
+
+:root {
+    /* Colores principales */
+    --sn-bg: #071018;
+    --sn-surface: #0D1B25;
+    --sn-surface-hover: #142936;
+    /* Textos */
+    --sn-text: #F2F7F6;
+    --sn-muted: #A9C3C8;
+    --sn-mineral: #DDECEE;
+    /* Identidad */
+    --sn-primary: #63D9F2;
+    --sn-primary-hover: #8BE5F6;
+    /* Colores complementarios */
+    --sn-violet: #6C5C8D;
+    --sn-amber: #D7A45B;
+    /* Bordes y sombras */
+    --sn-border: #29404A;
+    --sn-divider: #6E8D94;
+    --sn-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Box Model */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+}
+
+body {
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--sn-bg);
+    color: var(--sn-text);
+}
+
+/* Enlaces */
+a {
+    color: var(--sn-primary);
+}
+
+    a:hover {
+        color: var(--sn-primary-hover);
+    }
+
+/* Botones Bootstrap */
+.btn-primary {
+    color: var(--sn-bg);
+    background-color: var(--sn-primary);
+    border-color: var(--sn-primary);
+}
+
+    .btn-primary:hover {
+        color: var(--sn-bg);
+        background-color: var(--sn-primary-hover);
+        border-color: var(--sn-primary-hover);
+    }
+
+/* Campos de formulario */
+.form-control,
+.form-select {
+    background-color: var(--sn-surface);
+    color: var(--sn-text);
+    border: 1px solid var(--sn-border);
+}
+
+    .form-control::placeholder {
+        color: var(--sn-muted);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background-color: var(--sn-surface);
+        color: var(--sn-text);
+        border-color: var(--sn-primary);
+        box-shadow: 0 0 0 0.2rem rgba(99, 217, 242, 0.18);
+    }
+
+/* Selección de texto */
+::selection {
+    background-color: var(--sn-primary);
+    color: var(--sn-bg);
+}

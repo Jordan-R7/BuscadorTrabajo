@@ -1,11 +1,13 @@
-.nexodev-shell {
+/* Estructura general */
+.SkillNet-shell {
     width: 100%;
     min-height: 100vh;
-    background-color: #f7f8fc;
+    background-color: var(--sn-bg);
+    color: var(--sn-text);
 }
 
-/* Encabezado */
-.nexodev-topbar {
+/* Barra superior */
+.SkillNet-topbar {
     width: 100%;
     min-height: 76px;
     padding: 0 clamp(16px, 4vw, 60px);
@@ -13,29 +15,34 @@
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-    background-color: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
+    background-color: var(--sn-surface);
+    border-bottom: 1px solid var(--sn-border);
 }
 
-/* Marca */
-.nexodev-brand {
+/* Nombre de la aplicación */
+.SkillNet-brand {
     margin-right: auto;
-    color: #2563eb;
+    color: var(--sn-primary);
     font-size: 25px;
     font-weight: 750;
     text-decoration: none;
     letter-spacing: -0.5px;
 }
 
-/* Elementos del lado derecho */
-.nexodev-topbar-right {
+    .SkillNet-brand:hover {
+        color: var(--sn-primary-hover);
+    }
+
+/* Sección derecha */
+.SkillNet-topbar-right {
     display: flex;
     align-items: center;
     gap: 20px;
-    color: #64748b;
+    color: var(--sn-muted);
     font-size: 14px;
 }
 
+/* Avatar */
 .user-icon {
     width: 42px;
     height: 42px;
@@ -43,31 +50,33 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #dbeafe;
-    color: #2563eb;
+    background-color: rgba(99, 217, 242, 0.15);
+    color: var(--sn-primary);
+    border: 1px solid var(--sn-border);
     border-radius: 50%;
     font-weight: 700;
 }
 
-/* Contenido de las páginas */
-.nexodev-main {
+/* Contenido */
+.SkillNet-main {
     width: 100%;
     max-width: 1440px;
+    min-height: calc(100vh - 76px);
     margin: 0 auto;
     padding: 36px clamp(16px, 4vw, 60px);
 }
 
 @media (max-width: 650px) {
-    .nexodev-topbar {
+    .SkillNet-topbar {
         gap: 12px;
         padding: 12px 16px;
     }
 
-    .nexodev-topbar-right > span:first-child {
+    .SkillNet-topbar-right > span:first-child {
         display: none;
     }
 
-    .nexodev-main {
+    .SkillNet-main {
         padding: 24px 16px;
     }
 }

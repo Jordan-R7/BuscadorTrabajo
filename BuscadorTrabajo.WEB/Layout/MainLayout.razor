@@ -1,16 +1,23 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
+
+<div class="SkillNet-shell">
+
+    <header class="SkillNet-topbar">
         <NavMenu />
-    </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <a class="SkillNet-brand" href="/">
+            SkillNet
+        </a>
+
+        <div class="SkillNet-topbar-right">
+            <span>Conecta. Desarrolla. Crece.</span>
+            <span class="user-icon">JD</span>
         </div>
+    </header>
 
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="SkillNet-main">
+        @Body
     </main>
+
 </div>
+

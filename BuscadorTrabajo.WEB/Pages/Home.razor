@@ -1,7 +1,52 @@
 ﻿@page "/"
 
-<PageTitle>Inicio</PageTitle>
+<PageTitle>SkillNet - Inicio</PageTitle>
 
-<h1>Buscador de Trabajo</h1>
+<div class="home-welcome">
 
-<p>Plataforma de oportunidades laborales y servicios tecnológicos para el área de sistemas.</p>
+    <h1>Bienvenido a SkillNet</h1>
+
+    <p>
+        Conecta con empresas, clientes y profesionales
+        del mundo de la tecnología.
+    </p>
+
+    <div class="home-placeholder">
+        <h3>Tu próxima oportunidad comienza aquí.</h3>
+        <p>
+            Próximamente encontrarás las publicaciones
+            laborales y los proyectos disponibles.
+        </p>
+    </div>
+
+</div>
+
+<style>
+    .home-welcome h1 {
+        font-size: 32px;
+        font-weight: 750;
+        color: var(--sn-text);
+    }
+
+    .home-welcome > p {
+        color: var(--sn-muted);
+        margin-top: 8px;
+    }
+
+    .home-placeholder {
+        margin-top: 30px;
+        background-color: var(--sn-surface);
+        border: 1px solid var(--sn-border);
+        border-radius: 15px;
+        padding: 35px;
+        box-shadow: var(--sn-shadow);
+    }
+
+        .home-placeholder h3 {
+            color: var(--sn-text);
+        }
+
+        .home-placeholder p {
+            color: var(--sn-muted);
+        }
+</style>

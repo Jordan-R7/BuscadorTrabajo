@@ -1,39 +1,105 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">BuscadorTrabajo.WEB</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+﻿
+<div class="menu-container">
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
+    <button class="menu-toggle"
+            @onclick="ToggleMenu"
+            aria-label="Abrir menú">
+        <span>☰</span>
+    </button>
+
+    @if (menuOpen)
+    {
+        <div class="menu-overlay"
+             @onclick="CloseMenu">
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
+
+        <aside class="menu-panel">
+
+            <div class="menu-header">
+                <strong>Menú de navegación</strong>
+
+                <button class="menu-close"
+                        @onclick="CloseMenu">
+                    ×
+                </button>
+            </div>
+
+            <nav class="menu-links">
+
+                <NavLink href="/"
+                         Match="NavLinkMatch.All"
+                         class="menu-link"
+                         @onclick="CloseMenu">
+                    <span>⌂</span> Inicio
+                </NavLink>
+
+                <NavLink href="/publicaciones"
+                         class="menu-link"
+                         @onclick="CloseMenu">
+                    <span>▤</span> Publicaciones
+                </NavLink>
+
+                <NavLink href="/mi-perfil"
+                         class="menu-link"
+                         @onclick="CloseMenu">
+                    <span>♙</span> Mi perfil profesional
+                </NavLink>
+
+                <NavLink href="/mis-aplicaciones"
+                         class="menu-link"
+                         @onclick="CloseMenu">
+                    <span>➤</span> Mis aplicaciones
+                </NavLink>
+
+                <NavLink href="/mis-publicaciones"
+                         class="menu-link"
+                         @onclick="CloseMenu">
+                    <span>▣</span> Mis publicaciones
+                </NavLink>
+
+                <div class="menu-divider"></div>
+
+                <span class="menu-section-title">
+                    Administración
+                </span>
+
+                <NavLink href="/categorias" class="menu-link">
+                    Categorías
+                </NavLink>
+
+                <NavLink href="/habilidades" class="menu-link">
+                    Habilidades
+                </NavLink>
+
+                <NavLink href="/empresas" class="menu-link">
+                    Empresas
+                </NavLink>
+
+                <NavLink href="/clientes" class="menu-link">
+                    Clientes
+                </NavLink>
+
+                <NavLink href="/desarrolladores" class="menu-link">
+                    Desarrolladores
+                </NavLink>
+
+            </nav>
+
+        </aside>
+    }
+
 </div>
 
 @code {
-    private bool collapseNavMenu = true;
+    private bool menuOpen = false;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
+    private void ToggleMenu()
     {
-        collapseNavMenu = !collapseNavMenu;
+        menuOpen = !menuOpen;
+    }
+
+    private void CloseMenu()
+    {
+        menuOpen = false;
     }
 }

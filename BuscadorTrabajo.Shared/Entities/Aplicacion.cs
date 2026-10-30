@@ -45,7 +45,7 @@ namespace BuscadorTrabajo.Shared.Entities
 
 
         [Display(Name = "Monto propuesto")] //Aqui va el presupuesto que se tiene para la publicacion este solo aplica para trabajos freelance
-        [Range(typeof(decimal), "0", "999999999999.99", ErrorMessage = "El monto propuesto debe ser un valor válido y no negativo")]
+        [Range(typeof(decimal), "0", "999999999999.99", ParseLimitsInInvariantCulture = true, ErrorMessage = "El monto propuesto debe ser un valor válido y no negativo")]
         public decimal? MontoPropuesto { get; set; }
 
 

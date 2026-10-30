@@ -108,6 +108,13 @@ namespace BuscadorTrabajo.API.Controllers
                 publicacion.FechaPublicacion = hoy;
             }
 
+            // RN23: también se revisa cuando la fecha de publicación la asigna el API
+            if (publicacion.FechaVencimiento != null && publicacion.FechaPublicacion != null
+                && publicacion.FechaVencimiento <= publicacion.FechaPublicacion)
+            {
+                return BadRequest("La fecha de vencimiento debe ser posterior a la fecha de publicación."); //400
+            }
+
             var error = await ValidarRelacionesAsync(publicacion);
             if (error != null)
             {
@@ -152,6 +159,13 @@ namespace BuscadorTrabajo.API.Controllers
             if (publicacion.Estado == "PUBLICADA" && publicacion.FechaPublicacion == null)
             {
                 publicacion.FechaPublicacion = DateOnly.FromDateTime(DateTime.Today);
+            }
+
+            // RN23: también se revisa cuando la fecha de publicación la asigna el API
+            if (publicacion.FechaVencimiento != null && publicacion.FechaPublicacion != null
+                && publicacion.FechaVencimiento <= publicacion.FechaPublicacion)
+            {
+                return BadRequest("La fecha de vencimiento debe ser posterior a la fecha de publicación."); //400
             }
 
             var error = await ValidarRelacionesAsync(publicacion);

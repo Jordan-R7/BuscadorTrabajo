@@ -1,0 +1,300 @@
+﻿@page "/perfiles-habilidades"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<PageTitle>Habilidades por perfil</PageTitle>
+
+@* Tabla muchos a muchos Perfiles_Habilidades:
+   un perfil profesional tiene varias habilidades y una habilidad la tienen varios perfiles. *@
+
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Habilidades por perfil</h1>
+            <p class="bt-subtitle">Qué habilidades tiene el perfil profesional de cada desarrollador.</p>
+        </div>
+    </div>
+
+    <HabilidadesTabs />
+
+    @if (asignaciones is null)
+    {
+        <div class="bt-empty">Cargando...</div>
+    }
+    else
+    {
+        @* ---------- Asignar o cambiar una habilidad ---------- *@
+        <div class="bt-form-card" style="margin-bottom: 22px;">
+            <h2 class="bt-form-section-title">@(editando is null ? "Asignar una habilidad" : "Cambiar habilidad asignada")</h2>
+            <div class="bt-inline-form">
+                <div class="bt-field">
+                    <label class="bt-label">Perfil profesional</label>
+                    <select class="form-select" @bind="idPerfil" @bind:after="AlCambiarPerfil">
+                        <option value="0">Selecciona un perfil</option>
+                        @foreach (var perfil in perfiles)
+                        {
+                            <option value="@perfil.Id">@NombrePerfil(perfil)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Habilidad</label>
+                    <select class="form-select" @bind="idHabilidad">
+                        <option value="0">Selecciona una habilidad</option>
+                        @foreach (var habilidad in HabilidadesDisponibles())
+                        {
+                            <option value="@habilidad.Id">@habilidad.Nombre</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="bt-inline-actions">
+                    @if (editando is not null)
+                    {
+                        <button class="bt-btn bt-btn-ghost" type="button" @onclick="CancelarEdicion">Cancelar</button>
+                    }
+                    <button class="bt-btn bt-btn-primary" type="button" @onclick="GuardarAsync">@(editando is null ? "Asignar" : "Guardar cambio")</button>
+                </div>
+            </div>
+        </div>
+
+        @* ---------- Listado agrupado por perfil ---------- *@
+        <div class="bt-search">
+            <span class="bt-search-icon">⌕</span>
+            <input type="search" placeholder="Buscar por desarrollador, perfil o habilidad..." @bind="busqueda" @bind:event="oninput" />
+        </div>
+
+        var grupos = PerfilesFiltrados();
+
+        if (grupos.Count == 0)
+        {
+            <div class="bt-empty">No hay perfiles que coincidan con la búsqueda.</div>
+        }
+        else
+        {
+            <div class="bt-grid">
+                @foreach (var perfil in grupos)
+                {
+                    var asignadas = AsignacionesDe(perfil.Id);
+                    var desarrollador = NombreDesarrollador(perfil.IdDesarrollador);
+
+                    <article class="bt-card">
+                        <div class="bt-card-head">
+                            <div class="bt-avatar bt-avatar-violet">@Formato.Iniciales(desarrollador)</div>
+                            <div class="bt-card-heading">
+                                <h3 class="bt-card-title">@desarrollador</h3>
+                                <span class="bt-card-meta">@perfil.TituloProfesional · @(asignadas.Count) habilidad(es)</span>
+                            </div>
+                        </div>
+
+                        <div class="bt-chips">
+                            @if (asignadas.Count == 0)
+                            {
+                                <span class="bt-chip-empty">Sin habilidades asignadas</span>
+                            }
+                            @foreach (var asignacion in asignadas)
+                            {
+                                <span class="bt-chip bt-chip-action @(editando?.Id == asignacion.Id ? "editing" : "")">
+                                    @NombreHabilidad(asignacion.IdHabilidad)
+                                    <button type="button" title="Cambiar habilidad" @onclick="@(() => EmpezarEdicion(asignacion))">✎</button>
+                                    <button type="button" class="bt-chip-remove" title="Quitar habilidad" @onclick="@(() => QuitarAsync(asignacion))">×</button>
+                                </span>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Perfil_Habilidad> asignaciones;
+    private List<PerfilProfesional> perfiles = new();
+    private List<Habilidad> habilidades = new();
+    private Dictionary<int, string> desarrolladores = new();
+
+    // Valores del formulario de arriba
+    private int idPerfil;
+    private int idHabilidad;
+    private Perfil_Habilidad editando;
+    private string busqueda = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tareaPerfiles = repository.GetAsync<List<PerfilProfesional>>("/api/perfilesprofesionales");
+        var tareaDesarrolladores = repository.GetAsync<List<Desarrollador>>("/api/desarrolladores");
+        var tareaHabilidades = repository.GetAsync<List<Habilidad>>("/api/habilidades");
+        await Task.WhenAll(tareaPerfiles, tareaDesarrolladores, tareaHabilidades);
+
+        var respuestaPerfiles = await tareaPerfiles;
+        var respuestaDesarrolladores = await tareaDesarrolladores;
+        var respuestaHabilidades = await tareaHabilidades;
+        if (respuestaPerfiles.Error || respuestaDesarrolladores.Error || respuestaHabilidades.Error)
+        {
+            await swal.FireAsync("Error", "No se pudieron cargar los perfiles, desarrolladores o habilidades.", SweetAlertIcon.Error);
+            asignaciones = new List<Perfil_Habilidad>();
+            return;
+        }
+
+        desarrolladores = respuestaDesarrolladores.Response.ToDictionary(d => d.Id, d => d.Nombre + " " + d.Apellido);
+        perfiles = respuestaPerfiles.Response.OrderBy(p => NombreDesarrollador(p.IdDesarrollador)).ToList();
+        habilidades = respuestaHabilidades.Response.OrderBy(h => h.Nombre).ToList();
+
+        await LoadAsignacionesAsync();
+    }
+
+    // GET /api/perfiles_habilidades
+    private async Task LoadAsignacionesAsync()
+    {
+        var responseHttp = await repository.GetAsync<List<Perfil_Habilidad>>("/api/perfiles_habilidades");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            asignaciones = new List<Perfil_Habilidad>();
+            return;
+        }
+
+        asignaciones = responseHttp.Response;
+    }
+
+    private List<Perfil_Habilidad> AsignacionesDe(int idPerfilBuscado)
+    {
+        return asignaciones
+            .Where(a => a.IdPerfilProfesional == idPerfilBuscado)
+            .OrderBy(a => NombreHabilidad(a.IdHabilidad))
+            .ToList();
+    }
+
+    private string NombreHabilidad(int id)
+    {
+        return habilidades.FirstOrDefault(h => h.Id == id)?.Nombre ?? "Habilidad";
+    }
+
+    private string NombreDesarrollador(int id)
+    {
+        return desarrolladores.GetValueOrDefault(id, "Desarrollador");
+    }
+
+    private string NombrePerfil(PerfilProfesional perfil)
+    {
+        return $"{NombreDesarrollador(perfil.IdDesarrollador)} - {perfil.TituloProfesional}";
+    }
+
+    // Habilidades que se pueden elegir: no se ofrecen las que el perfil ya tiene
+    private IEnumerable<Habilidad> HabilidadesDisponibles()
+    {
+        var yaAsignadas = asignaciones
+            .Where(a => a.IdPerfilProfesional == idPerfil && a.Id != editando?.Id)
+            .Select(a => a.IdHabilidad)
+            .ToList();
+
+        return habilidades.Where(h => !yaAsignadas.Contains(h.Id));
+    }
+
+    private List<PerfilProfesional> PerfilesFiltrados()
+    {
+        if (string.IsNullOrWhiteSpace(busqueda))
+        {
+            return perfiles;
+        }
+
+        var texto = busqueda.Trim();
+        return perfiles
+            .Where(p => NombrePerfil(p).Contains(texto, StringComparison.OrdinalIgnoreCase)
+                || AsignacionesDe(p.Id).Any(a => NombreHabilidad(a.IdHabilidad).Contains(texto, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+    }
+
+    private void AlCambiarPerfil()
+    {
+        // Al cambiar de perfil se reinicia la habilidad elegida
+        if (editando is null)
+        {
+            idHabilidad = 0;
+        }
+    }
+
+    private void EmpezarEdicion(Perfil_Habilidad asignacion)
+    {
+        editando = asignacion;
+        idPerfil = asignacion.IdPerfilProfesional;
+        idHabilidad = asignacion.IdHabilidad;
+    }
+
+    private void CancelarEdicion()
+    {
+        editando = null;
+        idPerfil = 0;
+        idHabilidad = 0;
+    }
+
+    // Crear: POST /api/perfiles_habilidades  |  Editar: PUT /api/perfiles_habilidades
+    private async Task GuardarAsync()
+    {
+        if (idPerfil == 0 || idHabilidad == 0)
+        {
+            await swal.FireAsync("Faltan datos", "Selecciona un perfil y una habilidad.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        var asignacion = new Perfil_Habilidad
+        {
+            Id = editando?.Id ?? 0,
+            IdPerfilProfesional = idPerfil,
+            IdHabilidad = idHabilidad
+        };
+
+        var responseHttp = editando is null
+            ? await repository.PostAsync("/api/perfiles_habilidades", asignacion)
+            : await repository.PutAsync("/api/perfiles_habilidades", asignacion);
+
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        var perfilElegido = idPerfil;
+        CancelarEdicion();
+        idPerfil = perfilElegido; // deja el perfil elegido para asignar otra rápido
+        await LoadAsignacionesAsync();
+    }
+
+    // Pide confirmación y quita: DELETE /api/perfiles_habilidades/{id}
+    private async Task QuitarAsync(Perfil_Habilidad asignacion)
+    {
+        var perfil = perfiles.FirstOrDefault(p => p.Id == asignacion.IdPerfilProfesional);
+        var nombre = perfil is null ? "este perfil" : NombreDesarrollador(perfil.IdDesarrollador);
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Quitar la habilidad {NombreHabilidad(asignacion.IdHabilidad)} del perfil de {nombre}?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/perfiles_habilidades/{asignacion.Id}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        if (editando?.Id == asignacion.Id)
+        {
+            CancelarEdicion();
+        }
+
+        await LoadAsignacionesAsync();
+    }
+}

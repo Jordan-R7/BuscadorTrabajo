@@ -1,0 +1,187 @@
+﻿@page "/publicaciones/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>@(publicacion?.Titulo ?? "Publicación")</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/publicaciones">‹ Volver a publicaciones</a>
+
+    @if (publicacion is null)
+    {
+        <div class="bt-empty">Cargando...</div>
+    }
+    else
+    {
+        <article class="bt-detail">
+            <div class="bt-pub-head">
+                <div>
+                    <h1 class="bt-title">@publicacion.Titulo</h1>
+                    <p class="bt-pub-meta">@propietario · @publicacion.Ciudad, @publicacion.Pais</p>
+                </div>
+                <span class="bt-badge @(publicacion.Tipo == "EMPLEO" ? "bt-badge-empleo" : "bt-badge-servicio")">@Formato.Texto(publicacion.Tipo)</span>
+            </div>
+
+            <p class="bt-pub-desc">@publicacion.Descripcion</p>
+
+            <div class="bt-chips">
+                @if (habilidades.Count == 0)
+                {
+                    <span class="bt-chip-empty">Sin habilidades asignadas</span>
+                }
+                @foreach (var habilidad in habilidades)
+                {
+                    <span class="bt-chip">@habilidad</span>
+                }
+            </div>
+
+            <div class="bt-detail-grid">
+                <div class="bt-detail-item">
+                    <span>@(publicacion.Tipo == "EMPLEO" ? "Salario" : "Presupuesto")</span>
+                    <strong>@Formato.Dinero(publicacion.Tipo == "EMPLEO" ? publicacion.Salario : publicacion.Presupuesto, publicacion.Moneda)</strong>
+                </div>
+                <div class="bt-detail-item">
+                    <span>Estado</span>
+                    <strong class="bt-estado bt-estado-@(publicacion.Estado.ToLowerInvariant())">@Formato.Texto(publicacion.Estado)</strong>
+                </div>
+                <div class="bt-detail-item">
+                    <span>Categoría</span>
+                    <strong>@categoria</strong>
+                </div>
+                <div class="bt-detail-item">
+                    <span>Modalidad</span>
+                    <strong>@Formato.Texto(publicacion.ModalidadTrabajo)</strong>
+                </div>
+
+                @if (publicacion.Tipo == "EMPLEO")
+                {
+                    <div class="bt-detail-item">
+                        <span>Tipo de contrato</span>
+                        <strong>@publicacion.TipoContrato</strong>
+                    </div>
+                    <div class="bt-detail-item">
+                        <span>Nivel de experiencia</span>
+                        <strong>@publicacion.NivelExperiencia</strong>
+                    </div>
+                }
+                else
+                {
+                    <div class="bt-detail-item">
+                        <span>Plazo de entrega</span>
+                        <strong>@publicacion.Plazo días</strong>
+                    </div>
+                }
+
+                <div class="bt-detail-item">
+                    <span>Creada</span>
+                    <strong>@Formato.Fecha(publicacion.FechaCreacion)</strong>
+                </div>
+                <div class="bt-detail-item">
+                    <span>Publicada</span>
+                    <strong>@Formato.Fecha(publicacion.FechaPublicacion)</strong>
+                </div>
+                <div class="bt-detail-item">
+                    <span>Vence</span>
+                    <strong>@Formato.Fecha(publicacion.FechaVencimiento)</strong>
+                </div>
+            </div>
+
+            <div class="bt-card-foot">
+                <button class="bt-btn bt-btn-danger" @onclick="DeleteAsync">Borrar</button>
+                <a class="bt-btn bt-btn-primary" href="/publicaciones/edit/@publicacion.Id">Editar publicación</a>
+            </div>
+        </article>
+    }
+</div>
+
+@code {
+    private Publicacion publicacion;
+    private string propietario = "";
+    private string categoria = "";
+    private List<string> habilidades = new();
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // GET /api/publicaciones/{id}
+        var responseHttp = await repository.GetAsync<Publicacion>($"/api/publicaciones/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode != System.Net.HttpStatusCode.NotFound)
+            {
+                var mensajeError = await responseHttp.GetErrorMessageAsync();
+                await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            }
+
+            navigationManager.NavigateTo("/publicaciones");
+            return;
+        }
+
+        var datos = responseHttp.Response;
+
+        // Nombre del propietario: empresa o cliente
+        if (datos.IdEmpresa != null)
+        {
+            var respuestaEmpresa = await repository.GetAsync<Empresa>($"/api/empresas/{datos.IdEmpresa}");
+            propietario = respuestaEmpresa.Error ? "Empresa" : respuestaEmpresa.Response.Nombre;
+        }
+        else if (datos.IdCliente != null)
+        {
+            var respuestaCliente = await repository.GetAsync<Cliente>($"/api/clientes/{datos.IdCliente}");
+            propietario = respuestaCliente.Error ? "Cliente" : $"{respuestaCliente.Response.Nombre} {respuestaCliente.Response.Apellido}";
+        }
+
+        // Nombre de la categoría
+        var respuestaCategoria = await repository.GetAsync<Categoria>($"/api/categorias/{datos.IdCategoria}");
+        categoria = respuestaCategoria.Error ? "Sin categoría" : respuestaCategoria.Response.Nombre;
+
+        // Habilidades de la publicación (tabla muchos a muchos)
+        var respuestaAsignaciones = await repository.GetAsync<List<Publicacion_Habilidad>>("/api/publicaciones_habilidades");
+        var respuestaHabilidades = await repository.GetAsync<List<Habilidad>>("/api/habilidades");
+        if (!respuestaAsignaciones.Error && !respuestaHabilidades.Error)
+        {
+            var idsHabilidades = respuestaAsignaciones.Response
+                .Where(a => a.IdPublicacion == Id)
+                .Select(a => a.IdHabilidad)
+                .ToList();
+
+            habilidades = respuestaHabilidades.Response
+                .Where(h => idsHabilidades.Contains(h.Id))
+                .Select(h => h.Nombre)
+                .OrderBy(n => n)
+                .ToList();
+        }
+
+        publicacion = datos;
+    }
+
+    // DELETE /api/publicaciones/{id}. Si tiene aplicaciones, el API responde 409 (RN25).
+    private async Task DeleteAsync()
+    {
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Seguro que quieres borrar la publicación {publicacion.Titulo}?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/publicaciones/{publicacion.Id}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        navigationManager.NavigateTo("/publicaciones");
+    }
+}

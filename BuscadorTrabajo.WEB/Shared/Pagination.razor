@@ -1,0 +1,48 @@
+﻿@* Paginación: botones Anterior / números / Siguiente.
+   Avisa a la página qué número de página se eligió y la página vuelve a pedir los datos al API. *@
+
+@if (TotalRecords > 0)
+{
+    <nav class="bt-pagination" aria-label="Paginación">
+        <span class="bt-count">Página @CurrentPage de @Math.Max(TotalPages, 1) · @TotalRecords registros</span>
+
+        @if (TotalPages > 1)
+        {
+            <div class="bt-pagination-pages">
+                <button class="bt-page-btn" disabled="@(CurrentPage <= 1)" @onclick="@(() => IrAsync(CurrentPage - 1))">‹</button>
+
+                @for (int i = 1; i <= TotalPages; i++)
+                {
+                    var pagina = i;
+                    <button class="bt-page-btn @(pagina == CurrentPage ? "active" : "")" @onclick="@(() => IrAsync(pagina))">@pagina</button>
+                }
+
+                <button class="bt-page-btn" disabled="@(CurrentPage >= TotalPages)" @onclick="@(() => IrAsync(CurrentPage + 1))">›</button>
+            </div>
+        }
+    </nav>
+}
+
+@code {
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    [Parameter]
+    public int TotalPages { get; set; }
+
+    [Parameter]
+    public int TotalRecords { get; set; }
+
+    [Parameter]
+    public EventCallback<int> SelectedPage { get; set; }
+
+    private async Task IrAsync(int pagina)
+    {
+        if (pagina < 1 || pagina > TotalPages || pagina == CurrentPage)
+        {
+            return;
+        }
+
+        await SelectedPage.InvokeAsync(pagina);
+    }
+}

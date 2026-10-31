@@ -1,0 +1,454 @@
+﻿@inject IRepository repository
+@inject SweetAlertService swal
+
+@* Formulario reutilizable: lo usan tanto "Crear" como "Editar".
+   Los campos cambian según el tipo: EMPLEO pide salario, contrato y nivel;
+   SERVICIO pide presupuesto y plazo (RN20 y RN21). *@
+
+<NavigationLock OnBeforeInternalNavigation="OnBeforeInternalNavigation"></NavigationLock>
+
+<div class="bt-form-card">
+    <EditForm EditContext="editContext" OnValidSubmit="EnviarAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @* ---------- Propietario y tipo ---------- *@
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">¿Quién publica y qué busca?</h2>
+            <div class="bt-form-grid">
+                <div class="bt-field">
+                    <label class="bt-label">Publica</label>
+                    <div class="bt-segment">
+                        <button type="button" class="@(esDeCliente ? "" : "active")" @onclick="@(() => CambiarPropietario(false))">Empresa</button>
+                        <button type="button" class="@(esDeCliente ? "active" : "")" @onclick="@(() => CambiarPropietario(true))">Cliente</button>
+                    </div>
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Tipo de publicación</label>
+                    <div class="bt-segment">
+                        <button type="button" class="@(Publicacion.Tipo == "EMPLEO" ? "active" : "")" disabled="@esDeCliente" @onclick="@(() => CambiarTipo("EMPLEO"))">Empleo</button>
+                        <button type="button" class="@(Publicacion.Tipo == "SERVICIO" ? "active" : "")" @onclick="@(() => CambiarTipo("SERVICIO"))">Servicio</button>
+                    </div>
+                    @if (esDeCliente)
+                    {
+                        <span class="bt-hint">Un cliente solo puede publicar solicitudes de servicio.</span>
+                    }
+                </div>
+
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">@(esDeCliente ? "Cliente" : "Empresa")</label>
+                    <select class="form-select" @bind="IdPropietario">
+                        <option value="0">Selecciona @(esDeCliente ? "un cliente" : "una empresa")</option>
+                        @if (esDeCliente)
+                        {
+                            foreach (var cliente in clientes)
+                            {
+                                <option value="@cliente.Id">@cliente.Nombre @cliente.Apellido (C.C. @cliente.Cedula)</option>
+                            }
+                        }
+                        else
+                        {
+                            foreach (var empresa in empresas)
+                            {
+                                <option value="@empresa.Id">@empresa.Nombre (NIT @empresa.NIT)</option>
+                            }
+                        }
+                    </select>
+                    <ValidationMessage For="@(() => Publicacion.IdEmpresa)" />
+                </div>
+            </div>
+        </div>
+
+        @* ---------- Información general ---------- *@
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Información general</h2>
+            <div class="bt-form-grid">
+                <div class="bt-field">
+                    <label class="bt-label">Título</label>
+                    <InputText class="form-control" @bind-Value="Publicacion.Titulo" placeholder="Ej: Desarrollador Backend .NET" />
+                    <ValidationMessage For="@(() => Publicacion.Titulo)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Categoría</label>
+                    <InputSelect class="form-select" @bind-Value="Publicacion.IdCategoria">
+                        <option value="0">Selecciona una categoría</option>
+                        @foreach (var categoria in categorias)
+                        {
+                            <option value="@categoria.Id">@categoria.Nombre</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Publicacion.IdCategoria)" />
+                </div>
+
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Descripción</label>
+                    <InputTextArea class="form-control" rows="3" @bind-Value="Publicacion.Descripcion" placeholder="Describe el trabajo, las tareas y lo que se espera" />
+                    <ValidationMessage For="@(() => Publicacion.Descripcion)" />
+                </div>
+            </div>
+        </div>
+
+        @* ---------- Condiciones (cambian según el tipo) ---------- *@
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">@(Publicacion.Tipo == "EMPLEO" ? "Condiciones del empleo" : "Condiciones del servicio")</h2>
+            <div class="bt-form-grid">
+                @if (Publicacion.Tipo == "EMPLEO")
+                {
+                    <div class="bt-field">
+                        <label class="bt-label">Salario mensual</label>
+                        <InputNumber class="form-control" @bind-Value="Publicacion.Salario" placeholder="Ej: 3500000" />
+                        <ValidationMessage For="@(() => Publicacion.Salario)" />
+                    </div>
+
+                    <div class="bt-field">
+                        <label class="bt-label">Tipo de contrato</label>
+                        <InputSelect class="form-select" @bind-Value="Publicacion.TipoContrato">
+                            <option value="">Selecciona el tipo de contrato</option>
+                            @foreach (var tipo in OpcionesConValorActual(tiposContrato, Publicacion.TipoContrato))
+                            {
+                                <option value="@tipo">@tipo</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => Publicacion.TipoContrato)" />
+                    </div>
+
+                    <div class="bt-field">
+                        <label class="bt-label">Nivel de experiencia</label>
+                        <InputSelect class="form-select" @bind-Value="Publicacion.NivelExperiencia">
+                            <option value="">Selecciona el nivel</option>
+                            @foreach (var nivel in OpcionesConValorActual(nivelesExperiencia, Publicacion.NivelExperiencia))
+                            {
+                                <option value="@nivel">@nivel</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => Publicacion.NivelExperiencia)" />
+                    </div>
+                }
+                else
+                {
+                    <div class="bt-field">
+                        <label class="bt-label">Presupuesto</label>
+                        <InputNumber class="form-control" @bind-Value="Publicacion.Presupuesto" placeholder="Ej: 2500000" />
+                        <ValidationMessage For="@(() => Publicacion.Presupuesto)" />
+                    </div>
+
+                    <div class="bt-field">
+                        <label class="bt-label">Plazo de entrega (días)</label>
+                        <InputNumber class="form-control" @bind-Value="Publicacion.Plazo" placeholder="Ej: 30" />
+                        <ValidationMessage For="@(() => Publicacion.Plazo)" />
+                    </div>
+                }
+
+                <div class="bt-field">
+                    <label class="bt-label">Moneda</label>
+                    <InputSelect class="form-select" @bind-Value="Publicacion.Moneda">
+                        <option value="COP">COP - Peso colombiano</option>
+                        <option value="USD">USD - Dólar</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Publicacion.Moneda)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Modalidad</label>
+                    <InputSelect class="form-select" @bind-Value="Publicacion.ModalidadTrabajo">
+                        <option value="">Sin especificar</option>
+                        <option value="REMOTO">Remoto</option>
+                        <option value="HIBRIDO">Híbrido</option>
+                        <option value="PRESENCIAL">Presencial</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Publicacion.ModalidadTrabajo)" />
+                </div>
+            </div>
+        </div>
+
+        @* ---------- Ubicación, estado y fechas ---------- *@
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Ubicación y publicación</h2>
+            <div class="bt-form-grid">
+                <div class="bt-field">
+                    <label class="bt-label">País</label>
+                    <InputText class="form-control" @bind-Value="Publicacion.Pais" />
+                    <ValidationMessage For="@(() => Publicacion.Pais)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Ciudad</label>
+                    <InputText class="form-control" @bind-Value="Publicacion.Ciudad" />
+                    <ValidationMessage For="@(() => Publicacion.Ciudad)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Estado</label>
+                    @* Solo se muestran los estados a los que se puede pasar (RN24) *@
+                    <InputSelect class="form-select" @bind-Value="Publicacion.Estado">
+                        @foreach (var estado in EstadosDisponibles())
+                        {
+                            <option value="@estado">@Formato.Texto(estado)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Publicacion.Estado)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Fecha de vencimiento (opcional)</label>
+                    <InputDate class="form-control" @bind-Value="Publicacion.FechaVencimiento" />
+                    <ValidationMessage For="@(() => Publicacion.FechaVencimiento)" />
+                    <span class="bt-hint">Debe ser posterior a la fecha de publicación.</span>
+                </div>
+            </div>
+        </div>
+
+        @* ---------- Habilidades (tabla muchos a muchos Publicaciones_Habilidades) ---------- *@
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Habilidades requeridas</h2>
+            <div class="bt-chips">
+                @if (habilidades.Count == 0)
+                {
+                    <span class="bt-chip-empty">Cargando habilidades...</span>
+                }
+                @foreach (var habilidad in habilidades)
+                {
+                    var seleccionada = HabilidadesSeleccionadas.Contains(habilidad.Id);
+                    <button type="button"
+                            class="bt-chip bt-chip-toggle @(seleccionada ? "selected" : "")"
+                            @onclick="@(() => AlternarHabilidad(habilidad.Id))">
+                        @(seleccionada ? "✓ " : "+ ")@habilidad.Nombre
+                    </button>
+                }
+            </div>
+            <p class="bt-hint" style="margin-top: 10px;">Toca una habilidad para agregarla o quitarla.</p>
+        </div>
+
+        <div class="bt-form-actions">
+            <button class="bt-btn bt-btn-ghost" type="button" @onclick="ReturnAction">Regresar</button>
+            <button class="bt-btn bt-btn-primary" type="submit">Guardar publicación</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private EditContext editContext = null!;
+
+    // Listas para los desplegables (vienen del API)
+    private List<Empresa> empresas = new();
+    private List<Cliente> clientes = new();
+    private List<Categoria> categorias = new();
+    private List<Habilidad> habilidades = new();
+
+    private readonly List<string> tiposContrato = new() { "Indefinido", "Término fijo", "Obra o labor", "Prestación de servicios", "Aprendizaje" };
+    private readonly List<string> nivelesExperiencia = new() { "Practicante", "Junior", "Semisenior", "Senior" };
+
+    // Estados a los que puede pasar una publicación desde cada estado (RN24)
+    private static readonly Dictionary<string, string[]> transiciones = new()
+    {
+        ["BORRADOR"] = new[] { "PUBLICADA", "CANCELADA" },
+        ["PUBLICADA"] = new[] { "PAUSADA", "CERRADA", "CANCELADA" },
+        ["PAUSADA"] = new[] { "PUBLICADA", "CERRADA", "CANCELADA" },
+        ["CERRADA"] = new string[0],
+        ["CANCELADA"] = new string[0]
+    };
+
+    // true = la publica un cliente; false = la publica una empresa
+    private bool esDeCliente;
+
+    [EditorRequired]
+    [Parameter]
+    public Publicacion Publicacion { get; set; }
+
+    // Ids de las habilidades marcadas. La página que usa el formulario las guarda en Publicaciones_Habilidades.
+    [EditorRequired]
+    [Parameter]
+    public List<int> HabilidadesSeleccionadas { get; set; }
+
+    // Estado que tenía la publicación al abrir "Editar". En "Crear" va vacío.
+    [Parameter]
+    public string EstadoOriginal { get; set; }
+
+    [EditorRequired]
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    [EditorRequired]
+    [Parameter]
+    public EventCallback ReturnAction { get; set; }
+
+    public bool FormPostedSuccessfully { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(Publicacion);
+        esDeCliente = Publicacion.IdCliente != null;
+    }
+
+    // Carga las listas de los desplegables
+    protected override async Task OnInitializedAsync()
+    {
+        var tareaEmpresas = repository.GetAsync<List<Empresa>>("/api/empresas");
+        var tareaClientes = repository.GetAsync<List<Cliente>>("/api/clientes");
+        var tareaCategorias = repository.GetAsync<List<Categoria>>("/api/categorias");
+        var tareaHabilidades = repository.GetAsync<List<Habilidad>>("/api/habilidades");
+
+        await Task.WhenAll(tareaEmpresas, tareaClientes, tareaCategorias, tareaHabilidades);
+
+        var respuestaEmpresas = await tareaEmpresas;
+        var respuestaClientes = await tareaClientes;
+        var respuestaCategorias = await tareaCategorias;
+        var respuestaHabilidades = await tareaHabilidades;
+
+        if (respuestaEmpresas.Error || respuestaClientes.Error || respuestaCategorias.Error || respuestaHabilidades.Error)
+        {
+            await swal.FireAsync("Error", "No se pudieron cargar las listas del formulario. Revisa que el API esté encendido.", SweetAlertIcon.Error);
+            return;
+        }
+
+        empresas = respuestaEmpresas.Response.OrderBy(e => e.Nombre).ToList();
+        clientes = respuestaClientes.Response.OrderBy(c => c.Nombre).ToList();
+        categorias = respuestaCategorias.Response.OrderBy(c => c.Nombre).ToList();
+        habilidades = respuestaHabilidades.Response.OrderBy(h => h.Nombre).ToList();
+    }
+
+    // Id del propietario elegido en la lista (empresa o cliente, según el interruptor)
+    private int IdPropietario
+    {
+        get => (esDeCliente ? Publicacion.IdCliente : Publicacion.IdEmpresa) ?? 0;
+        set
+        {
+            int? valor = value == 0 ? null : value;
+            if (esDeCliente)
+            {
+                Publicacion.IdCliente = valor;
+                Publicacion.IdEmpresa = null;
+            }
+            else
+            {
+                Publicacion.IdEmpresa = valor;
+                Publicacion.IdCliente = null;
+            }
+
+            Notificar(nameof(Publicacion.IdEmpresa));
+        }
+    }
+
+    private void CambiarPropietario(bool cliente)
+    {
+        if (esDeCliente == cliente)
+        {
+            return;
+        }
+
+        esDeCliente = cliente;
+        Publicacion.IdEmpresa = null;
+        Publicacion.IdCliente = null;
+
+        // RN19: un cliente solo publica solicitudes de servicio
+        if (cliente)
+        {
+            CambiarTipo("SERVICIO");
+        }
+
+        Notificar(nameof(Publicacion.IdEmpresa));
+    }
+
+    private void CambiarTipo(string tipo)
+    {
+        if (tipo == "EMPLEO" && esDeCliente)
+        {
+            return;
+        }
+
+        Publicacion.Tipo = tipo;
+
+        // Se limpian los campos que no aplican al nuevo tipo (RN20 y RN21)
+        if (tipo == "EMPLEO")
+        {
+            Publicacion.Presupuesto = null;
+            Publicacion.Plazo = null;
+        }
+        else
+        {
+            Publicacion.Salario = null;
+            Publicacion.TipoContrato = null;
+            Publicacion.NivelExperiencia = null;
+        }
+
+        Notificar(nameof(Publicacion.Tipo));
+    }
+
+    private void AlternarHabilidad(int idHabilidad)
+    {
+        if (HabilidadesSeleccionadas.Contains(idHabilidad))
+        {
+            HabilidadesSeleccionadas.Remove(idHabilidad);
+        }
+        else
+        {
+            HabilidadesSeleccionadas.Add(idHabilidad);
+        }
+    }
+
+    private IEnumerable<string> EstadosDisponibles()
+    {
+        // Una publicación nueva solo puede crearse como borrador o publicada
+        if (string.IsNullOrEmpty(EstadoOriginal))
+        {
+            return new[] { "BORRADOR", "PUBLICADA" };
+        }
+
+        var siguientes = transiciones.TryGetValue(EstadoOriginal, out var lista) ? lista : new string[0];
+        return new[] { EstadoOriginal }.Concat(siguientes);
+    }
+
+    // Si el valor guardado no está en la lista (por ejemplo, escrito desde Swagger), se agrega para no perderlo
+    private static IEnumerable<string> OpcionesConValorActual(List<string> opciones, string valorActual)
+    {
+        if (!string.IsNullOrWhiteSpace(valorActual) && !opciones.Contains(valorActual))
+        {
+            return opciones.Append(valorActual);
+        }
+
+        return opciones;
+    }
+
+    private void Notificar(string campo)
+    {
+        editContext.NotifyFieldChanged(new FieldIdentifier(Publicacion, campo));
+    }
+
+    // Antes de enviar, los textos opcionales vacíos se guardan como null
+    private async Task EnviarAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Publicacion.TipoContrato)) Publicacion.TipoContrato = null;
+        if (string.IsNullOrWhiteSpace(Publicacion.NivelExperiencia)) Publicacion.NivelExperiencia = null;
+        if (string.IsNullOrWhiteSpace(Publicacion.ModalidadTrabajo)) Publicacion.ModalidadTrabajo = null;
+
+        await OnSubmit.InvokeAsync();
+    }
+
+    // Si el usuario cambió algo y quiere salir sin guardar, le pide confirmación
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        var formWasEdited = editContext.IsModified();
+        if (!formWasEdited || FormPostedSuccessfully)
+        {
+            return;
+        }
+
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "¿Deseas abandonar la página y perder los cambios?",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true
+        });
+
+        var confirm = !string.IsNullOrEmpty(result.Value);
+        if (confirm)
+        {
+            return;
+        }
+
+        context.PreventNavigation();
+    }
+}

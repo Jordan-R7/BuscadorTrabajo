@@ -1,0 +1,284 @@
+﻿@page "/publicaciones-habilidades"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<PageTitle>Habilidades por publicación</PageTitle>
+
+@* Tabla muchos a muchos Publicaciones_Habilidades:
+   una publicación pide varias habilidades y una habilidad aparece en varias publicaciones. *@
+
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Habilidades por publicación</h1>
+            <p class="bt-subtitle">Qué habilidades pide cada oferta de empleo o solicitud de servicio.</p>
+        </div>
+    </div>
+
+    <HabilidadesTabs />
+
+    @if (asignaciones is null)
+    {
+        <div class="bt-empty">Cargando...</div>
+    }
+    else
+    {
+        @* ---------- Asignar o cambiar una habilidad ---------- *@
+        <div class="bt-form-card" style="margin-bottom: 22px;">
+            <h2 class="bt-form-section-title">@(editando is null ? "Asignar una habilidad" : "Cambiar habilidad asignada")</h2>
+            <div class="bt-inline-form">
+                <div class="bt-field">
+                    <label class="bt-label">Publicación</label>
+                    <select class="form-select" @bind="idPublicacion" @bind:after="AlCambiarPublicacion">
+                        <option value="0">Selecciona una publicación</option>
+                        @foreach (var publicacion in publicaciones)
+                        {
+                            <option value="@publicacion.Id">@publicacion.Titulo</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Habilidad</label>
+                    <select class="form-select" @bind="idHabilidad">
+                        <option value="0">Selecciona una habilidad</option>
+                        @foreach (var habilidad in HabilidadesDisponibles())
+                        {
+                            <option value="@habilidad.Id">@habilidad.Nombre</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="bt-inline-actions">
+                    @if (editando is not null)
+                    {
+                        <button class="bt-btn bt-btn-ghost" type="button" @onclick="CancelarEdicion">Cancelar</button>
+                    }
+                    <button class="bt-btn bt-btn-primary" type="button" @onclick="GuardarAsync">@(editando is null ? "Asignar" : "Guardar cambio")</button>
+                </div>
+            </div>
+        </div>
+
+        @* ---------- Listado agrupado por publicación ---------- *@
+        <div class="bt-search">
+            <span class="bt-search-icon">⌕</span>
+            <input type="search" placeholder="Buscar por publicación o habilidad..." @bind="busqueda" @bind:event="oninput" />
+        </div>
+
+        var grupos = PublicacionesFiltradas();
+
+        if (grupos.Count == 0)
+        {
+            <div class="bt-empty">No hay publicaciones que coincidan con la búsqueda.</div>
+        }
+        else
+        {
+            <div class="bt-grid">
+                @foreach (var publicacion in grupos)
+                {
+                    var asignadas = AsignacionesDe(publicacion.Id);
+
+                    <article class="bt-card">
+                        <div class="bt-pub-head">
+                            <div class="bt-card-heading">
+                                <h3 class="bt-card-title">@publicacion.Titulo</h3>
+                                <span class="bt-card-meta">@(asignadas.Count) habilidad(es)</span>
+                            </div>
+                            <span class="bt-badge @(publicacion.Tipo == "EMPLEO" ? "bt-badge-empleo" : "bt-badge-servicio")">@Formato.Texto(publicacion.Tipo)</span>
+                        </div>
+
+                        <div class="bt-chips">
+                            @if (asignadas.Count == 0)
+                            {
+                                <span class="bt-chip-empty">Sin habilidades asignadas</span>
+                            }
+                            @foreach (var asignacion in asignadas)
+                            {
+                                <span class="bt-chip bt-chip-action @(editando?.Id == asignacion.Id ? "editing" : "")">
+                                    @NombreHabilidad(asignacion.IdHabilidad)
+                                    <button type="button" title="Cambiar habilidad" @onclick="@(() => EmpezarEdicion(asignacion))">✎</button>
+                                    <button type="button" class="bt-chip-remove" title="Quitar habilidad" @onclick="@(() => QuitarAsync(asignacion))">×</button>
+                                </span>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Publicacion_Habilidad> asignaciones;
+    private List<Publicacion> publicaciones = new();
+    private List<Habilidad> habilidades = new();
+
+    // Valores del formulario de arriba
+    private int idPublicacion;
+    private int idHabilidad;
+    private Publicacion_Habilidad editando;
+    private string busqueda = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tareaPublicaciones = repository.GetAsync<List<Publicacion>>("/api/publicaciones");
+        var tareaHabilidades = repository.GetAsync<List<Habilidad>>("/api/habilidades");
+        await Task.WhenAll(tareaPublicaciones, tareaHabilidades);
+
+        var respuestaPublicaciones = await tareaPublicaciones;
+        var respuestaHabilidades = await tareaHabilidades;
+        if (respuestaPublicaciones.Error || respuestaHabilidades.Error)
+        {
+            await swal.FireAsync("Error", "No se pudieron cargar las publicaciones o las habilidades.", SweetAlertIcon.Error);
+            asignaciones = new List<Publicacion_Habilidad>();
+            return;
+        }
+
+        publicaciones = respuestaPublicaciones.Response.OrderBy(p => p.Titulo).ToList();
+        habilidades = respuestaHabilidades.Response.OrderBy(h => h.Nombre).ToList();
+
+        await LoadAsignacionesAsync();
+    }
+
+    // GET /api/publicaciones_habilidades
+    private async Task LoadAsignacionesAsync()
+    {
+        var responseHttp = await repository.GetAsync<List<Publicacion_Habilidad>>("/api/publicaciones_habilidades");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            asignaciones = new List<Publicacion_Habilidad>();
+            return;
+        }
+
+        asignaciones = responseHttp.Response;
+    }
+
+    private List<Publicacion_Habilidad> AsignacionesDe(int idPublicacionBuscada)
+    {
+        return asignaciones
+            .Where(a => a.IdPublicacion == idPublicacionBuscada)
+            .OrderBy(a => NombreHabilidad(a.IdHabilidad))
+            .ToList();
+    }
+
+    private string NombreHabilidad(int id)
+    {
+        return habilidades.FirstOrDefault(h => h.Id == id)?.Nombre ?? "Habilidad";
+    }
+
+    // Habilidades que se pueden elegir: no se ofrecen las que la publicación ya tiene (RN32)
+    private IEnumerable<Habilidad> HabilidadesDisponibles()
+    {
+        var yaAsignadas = asignaciones
+            .Where(a => a.IdPublicacion == idPublicacion && a.Id != editando?.Id)
+            .Select(a => a.IdHabilidad)
+            .ToList();
+
+        return habilidades.Where(h => !yaAsignadas.Contains(h.Id));
+    }
+
+    private List<Publicacion> PublicacionesFiltradas()
+    {
+        if (string.IsNullOrWhiteSpace(busqueda))
+        {
+            return publicaciones;
+        }
+
+        var texto = busqueda.Trim();
+        return publicaciones
+            .Where(p => p.Titulo.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                || AsignacionesDe(p.Id).Any(a => NombreHabilidad(a.IdHabilidad).Contains(texto, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+    }
+
+    private void AlCambiarPublicacion()
+    {
+        // Al cambiar de publicación se reinicia la habilidad elegida
+        if (editando is null)
+        {
+            idHabilidad = 0;
+        }
+    }
+
+    private void EmpezarEdicion(Publicacion_Habilidad asignacion)
+    {
+        editando = asignacion;
+        idPublicacion = asignacion.IdPublicacion;
+        idHabilidad = asignacion.IdHabilidad;
+    }
+
+    private void CancelarEdicion()
+    {
+        editando = null;
+        idPublicacion = 0;
+        idHabilidad = 0;
+    }
+
+    // Crear: POST /api/publicaciones_habilidades  |  Editar: PUT /api/publicaciones_habilidades
+    private async Task GuardarAsync()
+    {
+        if (idPublicacion == 0 || idHabilidad == 0)
+        {
+            await swal.FireAsync("Faltan datos", "Selecciona una publicación y una habilidad.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        var asignacion = new Publicacion_Habilidad
+        {
+            Id = editando?.Id ?? 0,
+            IdPublicacion = idPublicacion,
+            IdHabilidad = idHabilidad
+        };
+
+        var responseHttp = editando is null
+            ? await repository.PostAsync("/api/publicaciones_habilidades", asignacion)
+            : await repository.PutAsync("/api/publicaciones_habilidades", asignacion);
+
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        var publicacionElegida = idPublicacion;
+        CancelarEdicion();
+        idPublicacion = publicacionElegida; // deja la publicación elegida para asignar otra rápido
+        await LoadAsignacionesAsync();
+    }
+
+    // Pide confirmación y quita: DELETE /api/publicaciones_habilidades/{id}
+    private async Task QuitarAsync(Publicacion_Habilidad asignacion)
+    {
+        var titulo = publicaciones.FirstOrDefault(p => p.Id == asignacion.IdPublicacion)?.Titulo;
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Quitar la habilidad {NombreHabilidad(asignacion.IdHabilidad)} de la publicación {titulo}?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/publicaciones_habilidades/{asignacion.Id}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        if (editando?.Id == asignacion.Id)
+        {
+            CancelarEdicion();
+        }
+
+        await LoadAsignacionesAsync();
+    }
+}

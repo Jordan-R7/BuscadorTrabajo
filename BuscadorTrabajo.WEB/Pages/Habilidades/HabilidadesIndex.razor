@@ -1,0 +1,146 @@
+﻿@page "/habilidades"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<PageTitle>Habilidades</PageTitle>
+
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Habilidades</h1>
+            <p class="bt-subtitle">Tecnologías y conocimientos que piden las publicaciones y que tienen los perfiles.</p>
+        </div>
+        <a class="bt-btn bt-btn-primary" href="/habilidades/create">+ Nueva habilidad</a>
+    </div>
+
+    <HabilidadesTabs />
+
+    <GenericList MyList="Habilidades">
+        <NoRecords>
+            <div class="bt-empty">Todavía no hay habilidades registradas.</div>
+        </NoRecords>
+        <Body>
+            <div class="bt-grid">
+                @foreach (var habilidad in Habilidades)
+                {
+                    <article class="bt-card">
+                        <div class="bt-card-head">
+                            <div class="bt-avatar">@Formato.Iniciales(habilidad.Nombre)</div>
+                            <div class="bt-card-heading">
+                                <h3 class="bt-card-title">@habilidad.Nombre</h3>
+                            </div>
+                        </div>
+
+                        <div class="bt-chips">
+                            <span class="bt-chip bt-chip-category">@NombreCategoria(habilidad.IdCategoria)</span>
+                        </div>
+
+                        <p class="bt-card-text">@habilidad.Descripcion</p>
+
+                        <div class="bt-card-foot">
+                            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/habilidades/edit/@habilidad.Id">Editar</a>
+                            <button class="bt-btn bt-btn-danger bt-btn-sm" @onclick="@(() => DeleteAsync(habilidad))">Borrar</button>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <Pagination CurrentPage="currentPage" TotalPages="totalPages" TotalRecords="totalRecords" SelectedPage="SelectedPageAsync" />
+        </Body>
+    </GenericList>
+</div>
+
+@code {
+    private const int PageSize = 6;
+
+    public List<Habilidad> Habilidades { get; set; }
+
+    // Nombre de cada categoría por su Id, para mostrarlo en la tarjeta
+    private Dictionary<int, string> categorias = new();
+
+    private int currentPage = 1;
+    private int totalPages;
+    private int totalRecords;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategoriasAsync();
+        await LoadAsync(1);
+    }
+
+    // GET /api/categorias
+    private async Task LoadCategoriasAsync()
+    {
+        var responseHttp = await repository.GetAsync<List<Categoria>>("/api/categorias");
+        if (responseHttp.Error)
+        {
+            return;
+        }
+
+        categorias = responseHttp.Response.ToDictionary(c => c.Id, c => c.Nombre);
+    }
+
+    // Pide una página al API: GET /api/habilidades/paginated?page=1&pageSize=6
+    private async Task LoadAsync(int page)
+    {
+        var responseHttp = await repository.GetAsync<PaginatedResponse<Habilidad>>($"/api/habilidades/paginated?page={page}&pageSize={PageSize}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            Habilidades = new List<Habilidad>();
+            return;
+        }
+
+        var respuesta = responseHttp.Response;
+
+        // Si la página quedó vacía (por ejemplo, después de borrar su último registro), vuelve a la anterior
+        if (respuesta.Data.Count == 0 && respuesta.Page > 1)
+        {
+            await LoadAsync(respuesta.Page - 1);
+            return;
+        }
+
+        Habilidades = respuesta.Data;
+        currentPage = respuesta.Page;
+        totalPages = respuesta.TotalPages;
+        totalRecords = respuesta.TotalRecords;
+    }
+
+    private string NombreCategoria(int idCategoria)
+    {
+        return categorias.TryGetValue(idCategoria, out var nombre) ? nombre : "Sin categoría";
+    }
+
+    private async Task SelectedPageAsync(int page)
+    {
+        await LoadAsync(page);
+    }
+
+    // Pide confirmación y borra: DELETE /api/habilidades/{id}
+    private async Task DeleteAsync(Habilidad habilidad)
+    {
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Seguro que quieres borrar la habilidad {habilidad.Nombre}?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/habilidades/{habilidad.Id}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoadAsync(currentPage);
+    }
+}

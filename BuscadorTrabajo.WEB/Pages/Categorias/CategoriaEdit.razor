@@ -5,16 +5,25 @@
 
 <PageTitle>Editar categoría</PageTitle>
 
-<h3>Editar categoría</h3>
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/categorias">‹ Volver a categorías</a>
 
-@if (categoria is null)
-{
-    <p>Cargando...</p>
-}
-else
-{
-    <CategoriaForm @ref="categoriaForm" Categoria="categoria" OnSubmit="EditAsync" ReturnAction="Return" />
-}
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar categoría</h1>
+            <p class="bt-subtitle">Los cambios se reflejan en sus habilidades y publicaciones.</p>
+        </div>
+    </div>
+
+    @if (categoria is null)
+    {
+        <div class="bt-empty">Cargando...</div>
+    }
+    else
+    {
+        <CategoriaForm @ref="categoriaForm" Categoria="categoria" OnSubmit="EditAsync" ReturnAction="Return" />
+    }
+</div>
 
 @code {
     private Categoria categoria;
@@ -55,7 +64,7 @@ else
             return;
         }
 
-        categoriaForm!.FormPostedSuccessfully = true;
+        categoriaForm.FormPostedSuccessfully = true;
         navigationManager.NavigateTo("/categorias");
     }
 

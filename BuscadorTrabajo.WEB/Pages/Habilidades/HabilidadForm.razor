@@ -1,0 +1,112 @@
+﻿@inject IRepository repository
+@inject SweetAlertService swal
+
+@* Formulario reutilizable: lo usan tanto "Crear" como "Editar". *@
+
+<NavigationLock OnBeforeInternalNavigation="OnBeforeInternalNavigation"></NavigationLock>
+
+<div class="bt-form-card">
+    <EditForm EditContext="editContext" OnValidSubmit="OnSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="bt-form-section">
+            <div class="bt-form-grid">
+                <div class="bt-field">
+                    <label class="bt-label">Nombre</label>
+                    <InputText class="form-control" @bind-Value="Habilidad.Nombre" placeholder="Ej: C#" />
+                    <ValidationMessage For="@(() => Habilidad.Nombre)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Categoría</label>
+                    @* Lista desplegable con las categorías que vienen del API *@
+                    <InputSelect class="form-select" @bind-Value="Habilidad.IdCategoria">
+                        <option value="0">Selecciona una categoría</option>
+                        @foreach (var categoria in categorias)
+                        {
+                            <option value="@categoria.Id">@categoria.Nombre</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Habilidad.IdCategoria)" />
+                </div>
+
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Descripción</label>
+                    <InputTextArea class="form-control" rows="3" @bind-Value="Habilidad.Descripcion" placeholder="¿Para qué se usa esta habilidad?" />
+                    <ValidationMessage For="@(() => Habilidad.Descripcion)" />
+                </div>
+            </div>
+            <p class="bt-hint">El nombre no se puede repetir dentro de la misma categoría.</p>
+        </div>
+
+        <div class="bt-form-actions">
+            <button class="bt-btn bt-btn-ghost" type="button" @onclick="ReturnAction">Regresar</button>
+            <button class="bt-btn bt-btn-primary" type="submit">Guardar</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private EditContext editContext = null!;
+    private List<Categoria> categorias = new();
+
+    [EditorRequired]
+    [Parameter]
+    public Habilidad Habilidad { get; set; }
+
+    [EditorRequired]
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    [EditorRequired]
+    [Parameter]
+    public EventCallback ReturnAction { get; set; }
+
+    public bool FormPostedSuccessfully { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(Habilidad);
+    }
+
+    // Carga las categorías para la lista desplegable: GET /api/categorias
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.GetAsync<List<Categoria>>("/api/categorias");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        categorias = responseHttp.Response.OrderBy(c => c.Nombre).ToList();
+    }
+
+    // Si el usuario cambió algo y quiere salir sin guardar, le pide confirmación
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        var formWasEdited = editContext.IsModified();
+        if (!formWasEdited || FormPostedSuccessfully)
+        {
+            return;
+        }
+
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "¿Deseas abandonar la página y perder los cambios?",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true
+        });
+
+        var confirm = !string.IsNullOrEmpty(result.Value);
+        if (confirm)
+        {
+            return;
+        }
+
+        context.PreventNavigation();
+    }
+}

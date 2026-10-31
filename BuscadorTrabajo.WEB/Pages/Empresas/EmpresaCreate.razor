@@ -1,0 +1,44 @@
+﻿@page "/empresas/create"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Nueva empresa</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/empresas">‹ Volver a empresas</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Nueva empresa</h1>
+            <p class="bt-subtitle">El NIT no se puede repetir.</p>
+        </div>
+    </div>
+
+    <EmpresaForm @ref="empresaForm" Empresa="empresa" OnSubmit="CreateAsync" ReturnAction="Return" />
+</div>
+
+@code {
+    private Empresa empresa = new() { Pais = "Colombia" };
+    private EmpresaForm empresaForm;
+
+    // Envía la empresa al API: POST /api/empresas
+    private async Task CreateAsync()
+    {
+        var responseHttp = await repository.PostAsync("/api/empresas", empresa);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        empresaForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/empresas");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/empresas");
+    }
+}

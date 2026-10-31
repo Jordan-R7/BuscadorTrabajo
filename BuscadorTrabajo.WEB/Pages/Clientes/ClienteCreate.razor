@@ -1,0 +1,44 @@
+﻿@page "/clientes/create"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Nuevo cliente</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/clientes">‹ Volver a clientes</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Nuevo cliente</h1>
+            <p class="bt-subtitle">La cédula no se puede repetir.</p>
+        </div>
+    </div>
+
+    <ClienteForm @ref="clienteForm" Cliente="cliente" OnSubmit="CreateAsync" ReturnAction="Return" />
+</div>
+
+@code {
+    private Cliente cliente = new();
+    private ClienteForm clienteForm;
+
+    // Envía el cliente al API: POST /api/clientes
+    private async Task CreateAsync()
+    {
+        var responseHttp = await repository.PostAsync("/api/clientes", cliente);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        clienteForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/clientes");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/clientes");
+    }
+}

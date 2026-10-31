@@ -1,0 +1,74 @@
+﻿@page "/clientes/edit/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar cliente</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/clientes">‹ Volver a clientes</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar cliente</h1>
+            <p class="bt-subtitle">Actualiza los datos del cliente.</p>
+        </div>
+    </div>
+
+    @if (cliente is null)
+    {
+        <div class="bt-empty">Cargando...</div>
+    }
+    else
+    {
+        <ClienteForm @ref="clienteForm" Cliente="cliente" OnSubmit="EditAsync" ReturnAction="Return" />
+    }
+</div>
+
+@code {
+    private Cliente cliente;
+    private ClienteForm clienteForm;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    // Trae el cliente a editar: GET /api/clientes/{id}
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.GetAsync<Cliente>($"/api/clientes/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/clientes");
+                return;
+            }
+
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        cliente = responseHttp.Response;
+    }
+
+    // Guarda los cambios: PUT /api/clientes
+    private async Task EditAsync()
+    {
+        var responseHttp = await repository.PutAsync("/api/clientes", cliente);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        clienteForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/clientes");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/clientes");
+    }
+}

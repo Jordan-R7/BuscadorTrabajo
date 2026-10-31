@@ -1,0 +1,123 @@
+﻿@page "/clientes"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<PageTitle>Clientes</PageTitle>
+
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Clientes</h1>
+            <p class="bt-subtitle">Personas que publican solicitudes de servicio para contratar a un desarrollador.</p>
+        </div>
+        <a class="bt-btn bt-btn-primary" href="/clientes/create">+ Nuevo cliente</a>
+    </div>
+
+    <GenericList MyList="Clientes">
+        <NoRecords>
+            <div class="bt-empty">Todavía no hay clientes registrados.</div>
+        </NoRecords>
+        <Body>
+            <div class="bt-grid">
+                @foreach (var cliente in Clientes)
+                {
+                    <article class="bt-card">
+                        <div class="bt-card-head">
+                            <div class="bt-avatar bt-avatar-violet">@(Formato.Iniciales(cliente.Nombre + " " + cliente.Apellido))</div>
+                            <div class="bt-card-heading">
+                                <h3 class="bt-card-title">@cliente.Nombre @cliente.Apellido</h3>
+                                <span class="bt-card-meta">C.C. @cliente.Cedula</span>
+                            </div>
+                        </div>
+
+                        <ul class="bt-info">
+                            <li><span>Correo</span>@cliente.Correo</li>
+                            <li><span>Celular</span>@cliente.Celular</li>
+                        </ul>
+
+                        <div class="bt-card-foot">
+                            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/clientes/edit/@cliente.Id">Editar</a>
+                            <button class="bt-btn bt-btn-danger bt-btn-sm" @onclick="@(() => DeleteAsync(cliente))">Borrar</button>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <Pagination CurrentPage="currentPage" TotalPages="totalPages" TotalRecords="totalRecords" SelectedPage="SelectedPageAsync" />
+        </Body>
+    </GenericList>
+</div>
+
+@code {
+    private const int PageSize = 6;
+
+    public List<Cliente> Clientes { get; set; }
+
+    private int currentPage = 1;
+    private int totalPages;
+    private int totalRecords;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync(1);
+    }
+
+    // Pide una página al API: GET /api/clientes/paginated?page=1&pageSize=6
+    private async Task LoadAsync(int page)
+    {
+        var responseHttp = await repository.GetAsync<PaginatedResponse<Cliente>>($"/api/clientes/paginated?page={page}&pageSize={PageSize}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            Clientes = new List<Cliente>();
+            return;
+        }
+
+        var respuesta = responseHttp.Response;
+
+        // Si la página quedó vacía (por ejemplo, después de borrar su último registro), vuelve a la anterior
+        if (respuesta.Data.Count == 0 && respuesta.Page > 1)
+        {
+            await LoadAsync(respuesta.Page - 1);
+            return;
+        }
+
+        Clientes = respuesta.Data;
+        currentPage = respuesta.Page;
+        totalPages = respuesta.TotalPages;
+        totalRecords = respuesta.TotalRecords;
+    }
+
+    private async Task SelectedPageAsync(int page)
+    {
+        await LoadAsync(page);
+    }
+
+    // Pide confirmación y borra: DELETE /api/clientes/{id}
+    private async Task DeleteAsync(Cliente cliente)
+    {
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Seguro que quieres borrar al cliente {cliente.Nombre} {cliente.Apellido}?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/clientes/{cliente.Id}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoadAsync(currentPage);
+    }
+}

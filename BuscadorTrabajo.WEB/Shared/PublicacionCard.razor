@@ -1,0 +1,63 @@
+﻿@* Tarjeta de una publicación. La usan el Inicio y la página de Publicaciones. *@
+
+<a class="bt-pub-card" href="/publicaciones/@Publicacion.Id">
+    <div class="bt-pub-head">
+        <h3 class="bt-pub-title">@Publicacion.Titulo</h3>
+        <span class="bt-badge @(Publicacion.Tipo == "EMPLEO" ? "bt-badge-empleo" : "bt-badge-servicio")">@Formato.Texto(Publicacion.Tipo)</span>
+    </div>
+
+    <p class="bt-pub-meta">
+        @Propietario · @Publicacion.Ciudad
+        @if (!string.IsNullOrWhiteSpace(Publicacion.ModalidadTrabajo))
+        {
+            <text> · @Formato.Texto(Publicacion.ModalidadTrabajo)</text>
+        }
+        @if (Publicacion.Tipo == "SERVICIO" && Publicacion.Plazo != null)
+        {
+            <text> · @Publicacion.Plazo días</text>
+        }
+    </p>
+
+    <p class="bt-pub-desc">@Publicacion.Descripcion</p>
+
+    <div class="bt-chips">
+        @if (Habilidades.Count == 0)
+        {
+            <span class="bt-chip-empty">Sin habilidades asignadas</span>
+        }
+        @foreach (var habilidad in Habilidades)
+        {
+            <span class="bt-chip">@habilidad</span>
+        }
+    </div>
+
+    <div class="bt-pub-foot">
+        @if (Publicacion.Tipo == "EMPLEO")
+        {
+            <strong class="bt-amount">@Formato.Dinero(Publicacion.Salario, Publicacion.Moneda)</strong>
+        }
+        else
+        {
+            <strong class="bt-amount"><small>Presupuesto:</small> @Formato.Dinero(Publicacion.Presupuesto, Publicacion.Moneda)</strong>
+        }
+
+        <div class="bt-pub-foot-right">
+            <span class="bt-estado bt-estado-@(Publicacion.Estado.ToLowerInvariant())">@Formato.Texto(Publicacion.Estado)</span>
+            <span class="bt-btn bt-btn-soft bt-btn-sm">Ver detalle</span>
+        </div>
+    </div>
+</a>
+
+@code {
+    [EditorRequired]
+    [Parameter]
+    public Publicacion Publicacion { get; set; }
+
+    // Nombre de la empresa o del cliente que publica
+    [Parameter]
+    public string Propietario { get; set; } = "";
+
+    // Nombres de las habilidades que pide (tabla Publicaciones_Habilidades)
+    [Parameter]
+    public List<string> Habilidades { get; set; } = new();
+}

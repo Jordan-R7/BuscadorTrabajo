@@ -1,0 +1,74 @@
+﻿@page "/empresas/edit/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar empresa</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/empresas">‹ Volver a empresas</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar empresa</h1>
+            <p class="bt-subtitle">Actualiza los datos de la empresa.</p>
+        </div>
+    </div>
+
+    @if (empresa is null)
+    {
+        <div class="bt-empty">Cargando...</div>
+    }
+    else
+    {
+        <EmpresaForm @ref="empresaForm" Empresa="empresa" OnSubmit="EditAsync" ReturnAction="Return" />
+    }
+</div>
+
+@code {
+    private Empresa empresa;
+    private EmpresaForm empresaForm;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    // Trae la empresa a editar: GET /api/empresas/{id}
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.GetAsync<Empresa>($"/api/empresas/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/empresas");
+                return;
+            }
+
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        empresa = responseHttp.Response;
+    }
+
+    // Guarda los cambios: PUT /api/empresas
+    private async Task EditAsync()
+    {
+        var responseHttp = await repository.PutAsync("/api/empresas", empresa);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        empresaForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/empresas");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/empresas");
+    }
+}

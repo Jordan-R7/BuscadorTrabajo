@@ -1,0 +1,74 @@
+﻿@page "/habilidades/edit/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar habilidad</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/habilidades">‹ Volver a habilidades</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar habilidad</h1>
+            <p class="bt-subtitle">Actualiza el nombre, la descripción o la categoría.</p>
+        </div>
+    </div>
+
+    @if (habilidad is null)
+    {
+        <div class="bt-empty">Cargando...</div>
+    }
+    else
+    {
+        <HabilidadForm @ref="habilidadForm" Habilidad="habilidad" OnSubmit="EditAsync" ReturnAction="Return" />
+    }
+</div>
+
+@code {
+    private Habilidad habilidad;
+    private HabilidadForm habilidadForm;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    // Trae la habilidad a editar: GET /api/habilidades/{id}
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.GetAsync<Habilidad>($"/api/habilidades/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/habilidades");
+                return;
+            }
+
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        habilidad = responseHttp.Response;
+    }
+
+    // Guarda los cambios: PUT /api/habilidades
+    private async Task EditAsync()
+    {
+        var responseHttp = await repository.PutAsync("/api/habilidades", habilidad);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        habilidadForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/habilidades");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/habilidades");
+    }
+}

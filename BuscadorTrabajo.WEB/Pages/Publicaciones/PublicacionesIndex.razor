@@ -1,0 +1,213 @@
+﻿@page "/publicaciones"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<PageTitle>Publicaciones</PageTitle>
+
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Encuentra tu próxima oportunidad</h1>
+            <p class="bt-subtitle">Conecta con empresas, clientes y profesionales de tecnología.</p>
+        </div>
+    </div>
+
+    @* Buscador: filtra mientras se escribe *@
+    <div class="bt-search">
+        <span class="bt-search-icon">⌕</span>
+        <input type="search"
+               placeholder="Buscar publicaciones, habilidades, empresas o ciudades..."
+               @bind="busqueda"
+               @bind:event="oninput" />
+        @if (!string.IsNullOrWhiteSpace(busqueda))
+        {
+            <button class="bt-btn bt-btn-ghost bt-btn-sm" type="button" @onclick="LimpiarBusqueda">Limpiar</button>
+        }
+    </div>
+
+    @if (publicaciones is null)
+    {
+        <div class="bt-empty">Cargando publicaciones...</div>
+    }
+    else
+    {
+        var lista = Filtrar();
+
+        <div class="bt-toolbar">
+            <div class="bt-pills">
+                <button class="bt-pill @(filtroTipo == "" ? "active" : "")" type="button" @onclick="@(() => CambiarTipo(""))">Todas (@(publicaciones.Count))</button>
+                <button class="bt-pill @(filtroTipo == "EMPLEO" ? "active" : "")" type="button" @onclick="@(() => CambiarTipo("EMPLEO"))">Empleo (@(publicaciones.Count(p => p.Tipo == "EMPLEO")))</button>
+                <button class="bt-pill @(filtroTipo == "SERVICIO" ? "active" : "")" type="button" @onclick="@(() => CambiarTipo("SERVICIO"))">Servicio (@(publicaciones.Count(p => p.Tipo == "SERVICIO")))</button>
+            </div>
+
+            <select class="form-select bt-select-sm" @bind="filtroEstado">
+                <option value="">Todos los estados</option>
+                <option value="PUBLICADA">Publicadas</option>
+                <option value="BORRADOR">Borradores</option>
+                <option value="PAUSADA">Pausadas</option>
+                <option value="CERRADA">Cerradas</option>
+                <option value="CANCELADA">Canceladas</option>
+            </select>
+        </div>
+
+        <div class="bt-toolbar">
+            <h2 class="bt-section-title">Publicaciones recientes</h2>
+            <span class="bt-count">@(lista.Count) resultado(s)</span>
+        </div>
+
+        if (lista.Count == 0)
+        {
+            <div class="bt-empty">No hay publicaciones que coincidan con la búsqueda.</div>
+        }
+        else
+        {
+            <div class="bt-feed">
+                @foreach (var publicacion in lista)
+                {
+                    var habilidades = HabilidadesDe(publicacion.Id);
+                    <PublicacionCard Publicacion="publicacion" Propietario="@NombrePropietario(publicacion)" Habilidades="habilidades" />
+                }
+            </div>
+        }
+    }
+
+    <a class="bt-fab" href="/publicaciones/create">+ Crear publicación</a>
+</div>
+
+@code {
+    private List<Publicacion> publicaciones;
+
+    // Datos de apoyo para mostrar nombres en lugar de Ids
+    private Dictionary<int, string> empresas = new();
+    private Dictionary<int, string> clientes = new();
+    private Dictionary<int, List<string>> habilidadesPorPublicacion = new();
+
+    // Texto que llega desde el buscador del Inicio: /publicaciones?buscar=react
+    [SupplyParameterFromQuery(Name = "buscar")]
+    public string Buscar { get; set; }
+
+    // Filtros
+    private string busqueda = "";
+    private string filtroTipo = "";
+    private string filtroEstado = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        busqueda = Buscar ?? "";
+
+        // Se piden todas las listas al mismo tiempo para que la página cargue más rápido
+        var tareaPublicaciones = repository.GetAsync<List<Publicacion>>("/api/publicaciones");
+        var tareaEmpresas = repository.GetAsync<List<Empresa>>("/api/empresas");
+        var tareaClientes = repository.GetAsync<List<Cliente>>("/api/clientes");
+        var tareaHabilidades = repository.GetAsync<List<Habilidad>>("/api/habilidades");
+        var tareaAsignaciones = repository.GetAsync<List<Publicacion_Habilidad>>("/api/publicaciones_habilidades");
+
+        await Task.WhenAll(tareaPublicaciones, tareaEmpresas, tareaClientes, tareaHabilidades, tareaAsignaciones);
+
+        var respuestaPublicaciones = await tareaPublicaciones;
+        if (respuestaPublicaciones.Error)
+        {
+            var mensajeError = await respuestaPublicaciones.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            publicaciones = new List<Publicacion>();
+            return;
+        }
+
+        // Las más recientes primero
+        publicaciones = respuestaPublicaciones.Response.OrderByDescending(p => p.Id).ToList();
+
+        var respuestaEmpresas = await tareaEmpresas;
+        if (!respuestaEmpresas.Error)
+        {
+            empresas = respuestaEmpresas.Response.ToDictionary(e => e.Id, e => e.Nombre);
+        }
+
+        var respuestaClientes = await tareaClientes;
+        if (!respuestaClientes.Error)
+        {
+            clientes = respuestaClientes.Response.ToDictionary(c => c.Id, c => c.Nombre + " " + c.Apellido);
+        }
+
+        var nombresHabilidades = new Dictionary<int, string>();
+        var respuestaHabilidades = await tareaHabilidades;
+        if (!respuestaHabilidades.Error)
+        {
+            nombresHabilidades = respuestaHabilidades.Response.ToDictionary(h => h.Id, h => h.Nombre);
+        }
+
+        // Tabla muchos a muchos: qué habilidades pide cada publicación
+        var respuestaAsignaciones = await tareaAsignaciones;
+        if (!respuestaAsignaciones.Error)
+        {
+            habilidadesPorPublicacion = respuestaAsignaciones.Response
+                .GroupBy(a => a.IdPublicacion)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(a => nombresHabilidades.GetValueOrDefault(a.IdHabilidad, "Habilidad")).OrderBy(n => n).ToList());
+        }
+    }
+
+    private List<Publicacion> Filtrar()
+    {
+        IEnumerable<Publicacion> consulta = publicaciones;
+
+        if (!string.IsNullOrEmpty(filtroTipo))
+        {
+            consulta = consulta.Where(p => p.Tipo == filtroTipo);
+        }
+
+        if (!string.IsNullOrEmpty(filtroEstado))
+        {
+            consulta = consulta.Where(p => p.Estado == filtroEstado);
+        }
+
+        if (!string.IsNullOrWhiteSpace(busqueda))
+        {
+            var texto = busqueda.Trim();
+            consulta = consulta.Where(p =>
+                Contiene(p.Titulo, texto)
+                || Contiene(p.Descripcion, texto)
+                || Contiene(p.Ciudad, texto)
+                || Contiene(NombrePropietario(p), texto)
+                || HabilidadesDe(p.Id).Any(h => Contiene(h, texto)));
+        }
+
+        return consulta.ToList();
+    }
+
+    private static bool Contiene(string valor, string texto)
+    {
+        return !string.IsNullOrEmpty(valor) && valor.Contains(texto, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private List<string> HabilidadesDe(int idPublicacion)
+    {
+        return habilidadesPorPublicacion.TryGetValue(idPublicacion, out var lista) ? lista : new List<string>();
+    }
+
+    // Una publicación es de una empresa o de un cliente (nunca de los dos)
+    private string NombrePropietario(Publicacion publicacion)
+    {
+        if (publicacion.IdEmpresa != null)
+        {
+            return empresas.GetValueOrDefault(publicacion.IdEmpresa.Value, "Empresa");
+        }
+
+        if (publicacion.IdCliente != null)
+        {
+            return clientes.GetValueOrDefault(publicacion.IdCliente.Value, "Cliente");
+        }
+
+        return "Sin propietario";
+    }
+
+    private void CambiarTipo(string tipo)
+    {
+        filtroTipo = tipo;
+    }
+
+    private void LimpiarBusqueda()
+    {
+        busqueda = "";
+    }
+}

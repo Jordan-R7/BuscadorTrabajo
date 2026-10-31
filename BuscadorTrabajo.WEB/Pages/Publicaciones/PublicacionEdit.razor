@@ -1,0 +1,121 @@
+﻿@page "/publicaciones/edit/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar publicación</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/publicaciones/@Id">‹ Volver al detalle</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar publicación</h1>
+            <p class="bt-subtitle">Si la publicación ya tiene aplicaciones, no se puede cambiar su tipo ni su propietario.</p>
+        </div>
+    </div>
+
+    @if (publicacion is null)
+    {
+        <div class="bt-empty">Cargando...</div>
+    }
+    else
+    {
+        <PublicacionForm @ref="publicacionForm"
+                         Publicacion="publicacion"
+                         HabilidadesSeleccionadas="habilidadesSeleccionadas"
+                         EstadoOriginal="@estadoOriginal"
+                         OnSubmit="EditAsync"
+                         ReturnAction="Return" />
+    }
+</div>
+
+@code {
+    private Publicacion publicacion;
+    private PublicacionForm publicacionForm;
+    private string estadoOriginal;
+
+    // Habilidades que la publicación tenía al abrir la página y las que quedan marcadas en el formulario
+    private List<Publicacion_Habilidad> asignacionesOriginales = new();
+    private List<int> habilidadesSeleccionadas = new();
+
+    [Parameter]
+    public int Id { get; set; }
+
+    // Trae la publicación (GET /api/publicaciones/{id}) y sus habilidades (GET /api/publicaciones_habilidades)
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.GetAsync<Publicacion>($"/api/publicaciones/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/publicaciones");
+                return;
+            }
+
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        var respuestaAsignaciones = await repository.GetAsync<List<Publicacion_Habilidad>>("/api/publicaciones_habilidades");
+        if (!respuestaAsignaciones.Error)
+        {
+            asignacionesOriginales = respuestaAsignaciones.Response.Where(a => a.IdPublicacion == Id).ToList();
+            habilidadesSeleccionadas = asignacionesOriginales.Select(a => a.IdHabilidad).ToList();
+        }
+
+        estadoOriginal = responseHttp.Response.Estado;
+        publicacion = responseHttp.Response;
+    }
+
+    // 1. Guarda la publicación: PUT /api/publicaciones
+    // 2. Agrega las habilidades nuevas (POST) y quita las desmarcadas (DELETE) en Publicaciones_Habilidades
+    private async Task EditAsync()
+    {
+        var responseHttp = await repository.PutAsync("/api/publicaciones", publicacion);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        var idsOriginales = asignacionesOriginales.Select(a => a.IdHabilidad).ToList();
+        var errores = 0;
+
+        foreach (var idHabilidad in habilidadesSeleccionadas.Where(id => !idsOriginales.Contains(id)))
+        {
+            var asignacion = new Publicacion_Habilidad { IdPublicacion = publicacion.Id, IdHabilidad = idHabilidad };
+            var respuesta = await repository.PostAsync("/api/publicaciones_habilidades", asignacion);
+            if (respuesta.Error)
+            {
+                errores++;
+            }
+        }
+
+        foreach (var asignacion in asignacionesOriginales.Where(a => !habilidadesSeleccionadas.Contains(a.IdHabilidad)))
+        {
+            var respuesta = await repository.DeleteAsync($"/api/publicaciones_habilidades/{asignacion.Id}");
+            if (respuesta.Error)
+            {
+                errores++;
+            }
+        }
+
+        publicacionForm.FormPostedSuccessfully = true;
+
+        if (errores > 0)
+        {
+            await swal.FireAsync("Atención", $"La publicación se guardó, pero {errores} cambio(s) de habilidades no se pudieron aplicar.", SweetAlertIcon.Warning);
+        }
+
+        navigationManager.NavigateTo($"/publicaciones/{publicacion.Id}");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo($"/publicaciones/{Id}");
+    }
+}

@@ -1,0 +1,76 @@
+﻿@page "/publicaciones/create"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Nueva publicación</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/publicaciones">‹ Volver a publicaciones</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Crear publicación</h1>
+            <p class="bt-subtitle">Publica una oferta de empleo o una solicitud de servicio.</p>
+        </div>
+    </div>
+
+    <PublicacionForm @ref="publicacionForm"
+                     Publicacion="publicacion"
+                     HabilidadesSeleccionadas="habilidadesSeleccionadas"
+                     OnSubmit="CreateAsync"
+                     ReturnAction="Return" />
+</div>
+
+@code {
+    private Publicacion publicacion = new()
+    {
+        Tipo = "EMPLEO",
+        Estado = "PUBLICADA",
+        Moneda = "COP",
+        Pais = "Colombia"
+    };
+
+    private List<int> habilidadesSeleccionadas = new();
+    private PublicacionForm publicacionForm;
+
+    // 1. Crea la publicación: POST /api/publicaciones (el API devuelve la publicación con su Id)
+    // 2. Guarda sus habilidades en la tabla muchos a muchos: POST /api/publicaciones_habilidades
+    private async Task CreateAsync()
+    {
+        var responseHttp = await repository.PostAsync<Publicacion, Publicacion>("/api/publicaciones", publicacion);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        var creada = responseHttp.Response;
+        var errores = 0;
+
+        foreach (var idHabilidad in habilidadesSeleccionadas)
+        {
+            var asignacion = new Publicacion_Habilidad { IdPublicacion = creada.Id, IdHabilidad = idHabilidad };
+            var respuestaAsignacion = await repository.PostAsync("/api/publicaciones_habilidades", asignacion);
+            if (respuestaAsignacion.Error)
+            {
+                errores++;
+            }
+        }
+
+        publicacionForm.FormPostedSuccessfully = true;
+
+        if (errores > 0)
+        {
+            await swal.FireAsync("Atención", $"La publicación se creó, pero {errores} habilidad(es) no se pudieron asignar.", SweetAlertIcon.Warning);
+        }
+
+        navigationManager.NavigateTo($"/publicaciones/{creada.Id}");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/publicaciones");
+    }
+}

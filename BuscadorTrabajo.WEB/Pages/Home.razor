@@ -1,52 +1,169 @@
 ﻿@page "/"
+@inject IRepository repository
+@inject NavigationManager navigationManager
 
 <PageTitle>SkillNet - Inicio</PageTitle>
 
-<div class="home-welcome">
+<div class="bt-page">
+    @* ---------- Encabezado y buscador ---------- *@
+    <section class="bt-hero">
+        <h1 class="bt-title">Encuentra tu próxima oportunidad</h1>
+        <p class="bt-subtitle">Conecta con empresas, clientes y profesionales de tecnología.</p>
 
-    <h1>Bienvenido a SkillNet</h1>
+        <form class="bt-search bt-hero-search" @onsubmit="Buscar" @onsubmit:preventDefault="true">
+            <span class="bt-search-icon">⌕</span>
+            <input type="search" placeholder="Buscar publicaciones, habilidades o empresas..." @bind="busqueda" />
+            <button class="bt-btn bt-btn-soft bt-btn-sm" type="submit">Buscar</button>
+        </form>
+    </section>
 
-    <p>
-        Conecta con empresas, clientes y profesionales
-        del mundo de la tecnología.
-    </p>
-
-    <div class="home-placeholder">
-        <h3>Tu próxima oportunidad comienza aquí.</h3>
-        <p>
-            Próximamente encontrarás las publicaciones
-            laborales y los proyectos disponibles.
-        </p>
+    @* ---------- Cifras rápidas ---------- *@
+    <div class="bt-stats">
+        <a class="bt-stat" href="/publicaciones">
+            <strong>@empleosActivos</strong>
+            <span>Empleos publicados</span>
+        </a>
+        <a class="bt-stat" href="/publicaciones">
+            <strong>@serviciosActivos</strong>
+            <span>Servicios publicados</span>
+        </a>
+        <a class="bt-stat" href="/empresas">
+            <strong>@totalEmpresas</strong>
+            <span>Empresas</span>
+        </a>
+        <a class="bt-stat" href="/habilidades">
+            <strong>@totalHabilidades</strong>
+            <span>Habilidades</span>
+        </a>
     </div>
 
+    @* ---------- Publicaciones recientes ---------- *@
+    <div class="bt-toolbar">
+        <h2 class="bt-section-title">Publicaciones recientes</h2>
+        <a class="bt-back" style="margin: 0;" href="/publicaciones">Ver todas ›</a>
+    </div>
+
+    @if (recientes is null)
+    {
+        <div class="bt-empty">Cargando publicaciones...</div>
+    }
+    else if (recientes.Count == 0)
+    {
+        <div class="bt-empty">Todavía no hay publicaciones activas. ¡Crea la primera!</div>
+    }
+    else
+    {
+        <div class="bt-feed">
+            @foreach (var publicacion in recientes)
+            {
+                var habilidades = HabilidadesDe(publicacion.Id);
+                <PublicacionCard Publicacion="publicacion" Propietario="@NombrePropietario(publicacion)" Habilidades="habilidades" />
+            }
+        </div>
+    }
+
+    <a class="bt-fab" href="/publicaciones/create">+ Crear publicación</a>
 </div>
 
-<style>
-    .home-welcome h1 {
-        font-size: 32px;
-        font-weight: 750;
-        color: var(--sn-text);
-    }
+@code {
+    private const int CantidadRecientes = 4;
 
-    .home-welcome > p {
-        color: var(--sn-muted);
-        margin-top: 8px;
-    }
+    private List<Publicacion> recientes;
+    private Dictionary<int, string> empresas = new();
+    private Dictionary<int, string> clientes = new();
+    private Dictionary<int, List<string>> habilidadesPorPublicacion = new();
 
-    .home-placeholder {
-        margin-top: 30px;
-        background-color: var(--sn-surface);
-        border: 1px solid var(--sn-border);
-        border-radius: 15px;
-        padding: 35px;
-        box-shadow: var(--sn-shadow);
-    }
+    private int empleosActivos;
+    private int serviciosActivos;
+    private int totalEmpresas;
+    private int totalHabilidades;
 
-        .home-placeholder h3 {
-            color: var(--sn-text);
+    private string busqueda = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Se piden todas las listas al mismo tiempo para que la página cargue más rápido
+        var tareaPublicaciones = repository.GetAsync<List<Publicacion>>("/api/publicaciones");
+        var tareaEmpresas = repository.GetAsync<List<Empresa>>("/api/empresas");
+        var tareaClientes = repository.GetAsync<List<Cliente>>("/api/clientes");
+        var tareaHabilidades = repository.GetAsync<List<Habilidad>>("/api/habilidades");
+        var tareaAsignaciones = repository.GetAsync<List<Publicacion_Habilidad>>("/api/publicaciones_habilidades");
+
+        await Task.WhenAll(tareaPublicaciones, tareaEmpresas, tareaClientes, tareaHabilidades, tareaAsignaciones);
+
+        var respuestaEmpresas = await tareaEmpresas;
+        if (!respuestaEmpresas.Error)
+        {
+            empresas = respuestaEmpresas.Response.ToDictionary(e => e.Id, e => e.Nombre);
+            totalEmpresas = empresas.Count;
         }
 
-        .home-placeholder p {
-            color: var(--sn-muted);
+        var respuestaClientes = await tareaClientes;
+        if (!respuestaClientes.Error)
+        {
+            clientes = respuestaClientes.Response.ToDictionary(c => c.Id, c => c.Nombre + " " + c.Apellido);
         }
-</style>
+
+        var nombresHabilidades = new Dictionary<int, string>();
+        var respuestaHabilidades = await tareaHabilidades;
+        if (!respuestaHabilidades.Error)
+        {
+            nombresHabilidades = respuestaHabilidades.Response.ToDictionary(h => h.Id, h => h.Nombre);
+            totalHabilidades = nombresHabilidades.Count;
+        }
+
+        var respuestaAsignaciones = await tareaAsignaciones;
+        if (!respuestaAsignaciones.Error)
+        {
+            habilidadesPorPublicacion = respuestaAsignaciones.Response
+                .GroupBy(a => a.IdPublicacion)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(a => nombresHabilidades.GetValueOrDefault(a.IdHabilidad, "Habilidad")).OrderBy(n => n).ToList());
+        }
+
+        var respuestaPublicaciones = await tareaPublicaciones;
+        if (respuestaPublicaciones.Error)
+        {
+            recientes = new List<Publicacion>();
+            return;
+        }
+
+        // En el inicio solo se muestran las publicaciones activas (PUBLICADA), las más nuevas primero
+        var publicadas = respuestaPublicaciones.Response.Where(p => p.Estado == "PUBLICADA").ToList();
+        empleosActivos = publicadas.Count(p => p.Tipo == "EMPLEO");
+        serviciosActivos = publicadas.Count(p => p.Tipo == "SERVICIO");
+        recientes = publicadas.OrderByDescending(p => p.Id).Take(CantidadRecientes).ToList();
+    }
+
+    // Lleva a Publicaciones con el texto buscado: /publicaciones?buscar=texto
+    private void Buscar()
+    {
+        var texto = busqueda?.Trim() ?? "";
+        var destino = string.IsNullOrEmpty(texto)
+            ? "/publicaciones"
+            : $"/publicaciones?buscar={Uri.EscapeDataString(texto)}";
+
+        navigationManager.NavigateTo(destino);
+    }
+
+    private List<string> HabilidadesDe(int idPublicacion)
+    {
+        return habilidadesPorPublicacion.TryGetValue(idPublicacion, out var lista) ? lista : new List<string>();
+    }
+
+    private string NombrePropietario(Publicacion publicacion)
+    {
+        if (publicacion.IdEmpresa != null)
+        {
+            return empresas.GetValueOrDefault(publicacion.IdEmpresa.Value, "Empresa");
+        }
+
+        if (publicacion.IdCliente != null)
+        {
+            return clientes.GetValueOrDefault(publicacion.IdCliente.Value, "Cliente");
+        }
+
+        return "Sin propietario";
+    }
+}

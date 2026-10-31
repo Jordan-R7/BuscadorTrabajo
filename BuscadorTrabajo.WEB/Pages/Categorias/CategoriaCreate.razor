@@ -5,9 +5,18 @@
 
 <PageTitle>Nueva categoría</PageTitle>
 
-<h3>Nueva categoría</h3>
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/categorias">‹ Volver a categorías</a>
 
-<CategoriaForm @ref="categoriaForm" Categoria="categoria" OnSubmit="CreateAsync" ReturnAction="Return" />
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Nueva categoría</h1>
+            <p class="bt-subtitle">El nombre de la categoría no se puede repetir.</p>
+        </div>
+    </div>
+
+    <CategoriaForm @ref="categoriaForm" Categoria="categoria" OnSubmit="CreateAsync" ReturnAction="Return" />
+</div>
 
 @code {
     private Categoria categoria = new();
@@ -24,7 +33,7 @@
             return;
         }
 
-        categoriaForm!.FormPostedSuccessfully = true;
+        categoriaForm.FormPostedSuccessfully = true;
         navigationManager.NavigateTo("/categorias");
     }
 

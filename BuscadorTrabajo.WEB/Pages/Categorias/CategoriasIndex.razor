@@ -1,56 +1,73 @@
 ﻿@page "/categorias"
 @inject IRepository repository
-@inject NavigationManager navigationManager
 @inject SweetAlertService swal
 
 <PageTitle>Categorías</PageTitle>
 
-<h3>Categorías</h3>
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Categorías</h1>
+            <p class="bt-subtitle">Áreas de sistemas que agrupan las habilidades y las publicaciones.</p>
+        </div>
+        <a class="bt-btn bt-btn-primary" href="/categorias/create">+ Nueva categoría</a>
+    </div>
 
-<div class="mb-3">
-    <a class="btn btn-primary" href="/categorias/create">Nueva categoría</a>
+    <GenericList MyList="Categorias">
+        <NoRecords>
+            <div class="bt-empty">Todavía no hay categorías registradas.</div>
+        </NoRecords>
+        <Body>
+            <div class="bt-grid">
+                @foreach (var categoria in Categorias)
+                {
+                    <article class="bt-card">
+                        <div class="bt-card-head">
+                            <div class="bt-avatar bt-avatar-amber">@Formato.Iniciales(categoria.Nombre)</div>
+                            <div class="bt-card-heading">
+                                <h3 class="bt-card-title">@categoria.Nombre</h3>
+                                <span class="bt-card-meta">@TextoHabilidades(categoria.Id)</span>
+                            </div>
+                        </div>
+
+                        <p class="bt-card-text">@categoria.Descripcion</p>
+
+                        <div class="bt-card-foot">
+                            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/categorias/edit/@categoria.Id">Editar</a>
+                            <button class="bt-btn bt-btn-danger bt-btn-sm" @onclick="@(() => DeleteAsync(categoria))">Borrar</button>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <Pagination CurrentPage="currentPage" TotalPages="totalPages" TotalRecords="totalRecords" SelectedPage="SelectedPageAsync" />
+        </Body>
+    </GenericList>
 </div>
 
-<GenericList MyList="Categorias">
-    <Body>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Descripción</th>
-                    <th style="width: 180px;">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var categoria in Categorias!)
-                {
-                    <tr>
-                        <td>@categoria.Nombre</td>
-                        <td>@categoria.Descripcion</td>
-                        <td>
-                            <a href="/categorias/edit/@categoria.Id" class="btn btn-warning btn-sm">Editar</a>
-                            <button class="btn btn-danger btn-sm" @onclick=@(() => DeleteAsync(categoria))>Borrar</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </Body>
-</GenericList>
-
 @code {
+    private const int PageSize = 6;
+
     public List<Categoria> Categorias { get; set; }
+
+    // Cuántas habilidades tiene cada categoría (para mostrarlo en la tarjeta)
+    private Dictionary<int, int> habilidadesPorCategoria = new();
+
+    private int currentPage = 1;
+    private int totalPages;
+    private int totalRecords;
 
     // Se ejecuta cuando se abre la página
     protected override async Task OnInitializedAsync()
     {
-        await LoadAsync();
+        await LoadHabilidadesAsync();
+        await LoadAsync(1);
     }
 
-    // Pide la lista al API: GET /api/categorias
-    private async Task LoadAsync()
+    // Pide una página al API: GET /api/categorias/paginated?page=1&pageSize=6
+    private async Task LoadAsync(int page)
     {
-        var responseHttp = await repository.GetAsync<List<Categoria>>("/api/categorias");
+        var responseHttp = await repository.GetAsync<PaginatedResponse<Categoria>>($"/api/categorias/paginated?page={page}&pageSize={PageSize}");
         if (responseHttp.Error)
         {
             var mensajeError = await responseHttp.GetErrorMessageAsync();
@@ -59,7 +76,44 @@
             return;
         }
 
-        Categorias = responseHttp.Response;
+        var respuesta = responseHttp.Response;
+
+        // Si la página quedó vacía (por ejemplo, después de borrar su último registro), vuelve a la anterior
+        if (respuesta.Data.Count == 0 && respuesta.Page > 1)
+        {
+            await LoadAsync(respuesta.Page - 1);
+            return;
+        }
+
+        Categorias = respuesta.Data;
+        currentPage = respuesta.Page;
+        totalPages = respuesta.TotalPages;
+        totalRecords = respuesta.TotalRecords;
+    }
+
+    // Cuenta las habilidades de cada categoría: GET /api/habilidades
+    private async Task LoadHabilidadesAsync()
+    {
+        var responseHttp = await repository.GetAsync<List<Habilidad>>("/api/habilidades");
+        if (responseHttp.Error)
+        {
+            return;
+        }
+
+        habilidadesPorCategoria = responseHttp.Response
+            .GroupBy(h => h.IdCategoria)
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private string TextoHabilidades(int idCategoria)
+    {
+        var cantidad = habilidadesPorCategoria.TryGetValue(idCategoria, out var total) ? total : 0;
+        return cantidad == 1 ? "1 habilidad" : $"{cantidad} habilidades";
+    }
+
+    private async Task SelectedPageAsync(int page)
+    {
+        await LoadAsync(page);
     }
 
     // Pide confirmación y borra: DELETE /api/categorias/{id}
@@ -87,6 +141,7 @@
             return;
         }
 
-        await LoadAsync();
+        await LoadHabilidadesAsync();
+        await LoadAsync(currentPage);
     }
 }

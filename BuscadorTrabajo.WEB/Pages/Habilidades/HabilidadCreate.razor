@@ -1,0 +1,44 @@
+﻿@page "/habilidades/create"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Nueva habilidad</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/habilidades">‹ Volver a habilidades</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Nueva habilidad</h1>
+            <p class="bt-subtitle">Cada habilidad pertenece a una categoría.</p>
+        </div>
+    </div>
+
+    <HabilidadForm @ref="habilidadForm" Habilidad="habilidad" OnSubmit="CreateAsync" ReturnAction="Return" />
+</div>
+
+@code {
+    private Habilidad habilidad = new();
+    private HabilidadForm habilidadForm;
+
+    // Envía la habilidad al API: POST /api/habilidades
+    private async Task CreateAsync()
+    {
+        var responseHttp = await repository.PostAsync("/api/habilidades", habilidad);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        habilidadForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/habilidades");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/habilidades");
+    }
+}

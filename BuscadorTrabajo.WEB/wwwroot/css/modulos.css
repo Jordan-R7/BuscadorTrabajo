@@ -324,13 +324,26 @@
 }
 
 .bt-card-foot {
-    display: flex;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     margin-top: auto;
     padding-top: 12px;
     border-top: 1px solid var(--sn-border);
+    width: 100%;
 }
+
+    .bt-card-foot .bt-btn {
+        width: 100%;
+        min-width: 0;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
 
 .bt-avatar {
     width: 44px;
@@ -1118,15 +1131,15 @@
 .bt-stepper-inner {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    min-width: 640px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    min-width: 760px;
 }
 
 .bt-stepper-track {
     position: absolute;
     top: 17px;
-    left: 8.333%;
-    right: 8.333%;
+    left: 7.142857%;
+    right: 7.142857%;
     height: 3px;
     background: var(--sn-border);
     border-radius: 10px;

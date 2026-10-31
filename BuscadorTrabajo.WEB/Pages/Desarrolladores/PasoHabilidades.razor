@@ -1,0 +1,506 @@
+﻿
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<div class="bt-form-card">
+
+    <div class="bt-form-section">
+
+        <h2 class="bt-form-section-title">
+            Habilidades profesionales
+        </h2>
+
+        <p class="bt-subtitle">
+            Selecciona las tecnologías, herramientas y conocimientos
+            que dominas. Puedes seleccionar varias habilidades.
+        </p>
+
+        @if (cargando)
+        {
+            <div class="bt-loading-card">
+                <div class="bt-spinner"></div>
+                <p>Cargando habilidades disponibles...</p>
+            </div>
+        }
+        else
+        {
+            <div class="bt-field">
+                <label class="bt-label">Buscar habilidad</label>
+
+                <input class="form-control"
+                       type="text"
+                       placeholder="Ej. C#, Python, SQL..."
+                       @bind="busqueda"
+                       @bind:event="oninput" />
+            </div>
+
+            <div class="bt-form-section">
+
+                <div class="bt-page-header">
+                    <h3 class="bt-form-section-title">
+                        Habilidades disponibles
+                    </h3>
+
+                    <span class="bt-chip">
+                        @Seleccionadas.Count seleccionadas
+                    </span>
+                </div>
+
+                @if (!HabilidadesFiltradas.Any())
+                {
+                    <div class="bt-hint">
+                        No se encontraron habilidades con ese nombre.
+                    </div>
+                }
+                else
+                {
+                    <div class="bt-grid">
+
+                        @foreach (var habilidad in HabilidadesFiltradas)
+                        {
+                            <label class="bt-card"
+                                   style="cursor: pointer;">
+
+                                <div class="bt-card-head">
+
+                                    <input type="checkbox"
+                                           class="form-check-input"
+                                           checked="@Seleccionadas.Contains(habilidad.Id)"
+                                           @onchange="(e) => CambiarSeleccion(habilidad.Id, e)" />
+
+                                    <div class="bt-card-heading">
+
+                                        <h3 class="bt-card-title">
+                                            @habilidad.Nombre
+                                        </h3>
+
+                                        <span class="bt-chip bt-chip-category">
+                                            @NombreCategoria(habilidad.IdCategoria)
+                                        </span>
+
+                                    </div>
+                                </div>
+
+                                <p class="bt-card-text">
+                                    @habilidad.Descripcion
+                                </p>
+
+                            </label>
+                        }
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+    <div class="bt-form-actions">
+
+        <button type="button"
+                class="bt-btn bt-btn-ghost"
+                @onclick="AlternarFormulario">
+
+            @(mostrarFormulario
+                ? "Cancelar creación"
+                : "+ Crear nueva habilidad")
+
+        </button>
+
+    </div>
+
+    @if (mostrarFormulario)
+    {
+        <div class="bt-form-section">
+
+            <h3 class="bt-form-section-title">
+                Nueva habilidad
+            </h3>
+
+            <EditForm Model="nuevaHabilidad"
+                      OnValidSubmit="CrearHabilidadAsync">
+
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="bt-form-grid">
+
+                    <div class="bt-field">
+
+                        <label class="bt-label">
+                            Nombre
+                        </label>
+
+                        <InputText class="form-control"
+                                   @bind-Value="nuevaHabilidad.Nombre"
+                                   placeholder="Ej. Blazor" />
+
+                        <ValidationMessage For="@(() => nuevaHabilidad.Nombre)" />
+
+                    </div>
+
+                    <div class="bt-field">
+
+                        <label class="bt-label">
+                            Categoría
+                        </label>
+
+                        <InputSelect class="form-select"
+                                     @bind-Value="nuevaHabilidad.IdCategoria">
+
+                            <option value="0">
+                                Selecciona una categoría
+                            </option>
+
+                            @foreach (var categoria in categorias.OrderBy(c => c.Value))
+                            {
+                                <option value="@categoria.Key">
+                                    @categoria.Value
+                                </option>
+                            }
+
+                        </InputSelect>
+
+                        <ValidationMessage For="@(() => nuevaHabilidad.IdCategoria)" />
+
+                    </div>
+
+                    <div class="bt-field bt-field-full">
+
+                        <label class="bt-label">
+                            Descripción
+                        </label>
+
+                        <InputTextArea class="form-control"
+                                       rows="3"
+                                       @bind-Value="nuevaHabilidad.Descripcion"
+                                       placeholder="Describe esta habilidad..." />
+
+                        <ValidationMessage For="@(() => nuevaHabilidad.Descripcion)" />
+
+                    </div>
+
+                </div>
+
+                <div class="bt-form-actions">
+
+                    <button type="submit"
+                            class="bt-btn bt-btn-primary"
+                            disabled="@creando">
+
+                        @(creando ? "Creando..." : "Crear y seleccionar")
+
+                    </button>
+
+                </div>
+
+            </EditForm>
+
+        </div>
+    }
+
+    <div class="bt-form-actions">
+
+        <button type="button"
+                class="bt-btn bt-btn-ghost"
+                @onclick="OnVolver">
+
+            ← Atrás
+
+        </button>
+
+        <button type="button"
+                class="bt-btn bt-btn-primary"
+                disabled="@cargando"
+                @onclick="ContinuarAsync">
+
+            Continuar →
+
+        </button>
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public List<int> Seleccionadas { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnContinuar { get; set; }
+
+    [Parameter]
+    public EventCallback OnVolver { get; set; }
+
+
+    private List<Habilidad> habilidades = new();
+
+    private Dictionary<int, string> categorias = new();
+
+    private string busqueda = string.Empty;
+
+    private bool cargando = true;
+
+    private bool mostrarFormulario = false;
+
+    private bool creando = false;
+
+    private Habilidad nuevaHabilidad = new();
+
+
+    private IEnumerable<Habilidad> HabilidadesFiltradas =>
+        habilidades.Where(h =>
+            string.IsNullOrWhiteSpace(busqueda) ||
+            (h.Nombre ?? string.Empty).Contains(
+                busqueda,
+                StringComparison.OrdinalIgnoreCase) ||
+            (h.Descripcion ?? string.Empty).Contains(
+                busqueda,
+                StringComparison.OrdinalIgnoreCase));
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatosAsync();
+    }
+
+
+    private async Task CargarDatosAsync()
+    {
+        cargando = true;
+
+        try
+        {
+            // Consultar categorías.
+            var respuestaCategorias =
+                await repository.GetAsync<List<Categoria>>(
+                    "/api/categorias");
+
+            if (respuestaCategorias.Error ||
+                respuestaCategorias.Response is null)
+            {
+                var mensaje =
+                    await respuestaCategorias.GetErrorMessageAsync();
+
+                await swal.FireAsync(
+                    "Error al cargar categorías",
+                    mensaje,
+                    SweetAlertIcon.Error);
+
+                return;
+            }
+
+            categorias = respuestaCategorias.Response
+                .ToDictionary(c => c.Id, c => c.Nombre);
+
+
+            // Consultar habilidades.
+            var respuestaHabilidades =
+                await repository.GetAsync<List<Habilidad>>(
+                    "/api/habilidades");
+
+            if (respuestaHabilidades.Error ||
+                respuestaHabilidades.Response is null)
+            {
+                var mensaje =
+                    await respuestaHabilidades.GetErrorMessageAsync();
+
+                await swal.FireAsync(
+                    "Error al cargar habilidades",
+                    mensaje,
+                    SweetAlertIcon.Error);
+
+                return;
+            }
+
+            habilidades = respuestaHabilidades.Response
+                .OrderBy(h => h.Nombre)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await swal.FireAsync(
+                "Error inesperado",
+                ex.Message,
+                SweetAlertIcon.Error);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+
+    private void CambiarSeleccion(int id, ChangeEventArgs e)
+    {
+        var seleccionado = e.Value is bool valor && valor;
+
+        if (seleccionado)
+        {
+            if (!Seleccionadas.Contains(id))
+            {
+                Seleccionadas.Add(id);
+            }
+        }
+        else
+        {
+            Seleccionadas.Remove(id);
+        }
+    }
+
+
+    private string NombreCategoria(int idCategoria)
+    {
+        return categorias.TryGetValue(idCategoria, out var nombre)
+            ? nombre
+            : "Sin categoría";
+    }
+
+
+    private async Task ContinuarAsync()
+    {
+        await OnContinuar.InvokeAsync();
+    }
+
+
+    private void AlternarFormulario()
+    {
+        mostrarFormulario = !mostrarFormulario;
+
+        if (!mostrarFormulario)
+        {
+            nuevaHabilidad = new Habilidad();
+        }
+    }
+
+
+    private async Task CrearHabilidadAsync()
+    {
+        if (creando)
+        {
+            return;
+        }
+
+        creando = true;
+
+        try
+        {
+            // Validar y limpiar el nombre.
+            var nombre = nuevaHabilidad.Nombre?.Trim();
+
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                await swal.FireAsync(
+                    "Nombre requerido",
+                    "Debes ingresar el nombre de la habilidad.",
+                    SweetAlertIcon.Warning);
+
+                return;
+            }
+
+            nuevaHabilidad.Nombre = nombre;
+
+
+            // Comprobar duplicados por nombre y categoría.
+            var existente = habilidades.FirstOrDefault(h =>
+                string.Equals(
+                    h.Nombre?.Trim(),
+                    nuevaHabilidad.Nombre,
+                    StringComparison.OrdinalIgnoreCase) &&
+                h.IdCategoria == nuevaHabilidad.IdCategoria);
+
+            if (existente is not null)
+            {
+                if (!Seleccionadas.Contains(existente.Id))
+                {
+                    Seleccionadas.Add(existente.Id);
+                }
+
+                mostrarFormulario = false;
+                nuevaHabilidad = new Habilidad();
+
+                await swal.FireAsync(
+                    "Habilidad existente",
+                    "Esta habilidad ya estaba registrada y fue seleccionada.",
+                    SweetAlertIcon.Info);
+
+                return;
+            }
+
+
+            // Crear la habilidad mediante el API.
+            var respuesta =
+                await repository.PostAsync<Habilidad, Habilidad>(
+                    "/api/habilidades",
+                    nuevaHabilidad);
+
+            if (respuesta.Error)
+            {
+                var mensaje =
+                    await respuesta.GetErrorMessageAsync();
+
+                await swal.FireAsync(
+                    "No se pudo crear la habilidad",
+                    mensaje,
+                    SweetAlertIcon.Error);
+
+                return;
+            }
+
+
+            // Recuperar la habilidad creada.
+            var creada = respuesta.Response;
+
+            if (creada is null)
+            {
+                await swal.FireAsync(
+                    "Respuesta inesperada",
+                    "La habilidad se guardó, pero no se recibió su información.",
+                    SweetAlertIcon.Warning);
+
+                return;
+            }
+
+
+            // Actualizar el catálogo local.
+            habilidades.Add(creada);
+
+            habilidades = habilidades
+                .OrderBy(h => h.Nombre)
+                .ToList();
+
+
+            // Seleccionar automáticamente la habilidad.
+            if (!Seleccionadas.Contains(creada.Id))
+            {
+                Seleccionadas.Add(creada.Id);
+            }
+
+
+            // Limpiar y cerrar el formulario.
+            mostrarFormulario = false;
+            nuevaHabilidad = new Habilidad();
+            busqueda = string.Empty;
+
+
+            await swal.FireAsync(
+                "Habilidad creada",
+                "La habilidad fue registrada y seleccionada correctamente.",
+                SweetAlertIcon.Success);
+        }
+        catch (Exception ex)
+        {
+            await swal.FireAsync(
+                "Error inesperado",
+                ex.Message,
+                SweetAlertIcon.Error);
+        }
+        finally
+        {
+            creando = false;
+        }
+    }
+
+}

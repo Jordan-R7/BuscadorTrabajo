@@ -19,10 +19,14 @@ namespace BuscadorTrabajo.Shared.DTOs
 
         public List<CertificacionRegistroDTO> Certificaciones { get; set; } = new();
 
+        public List<int> HabilidadesIds { get; set; } = new();
+
     }
 
     public class DesarrolladorRegistroDTO : IValidatableObject
     {
+      
+
         [Required(ErrorMessage = "La cédula es obligatoria.")]
         [MinLength(6, ErrorMessage = "La cédula debe tener al menos 6 dígitos.")]
         [MaxLength(10, ErrorMessage = "La cédula no puede superar los 10 dígitos.")]
@@ -100,9 +104,11 @@ namespace BuscadorTrabajo.Shared.DTOs
         public string LinkedIn { get; set; }
     }
 
-    
+        
     public class EducacionRegistroDTO : IValidatableObject
     {
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "El nivel educativo es obligatorio.")]
         [MaxLength(50)]
         public string NivelEducativo { get; set; }
@@ -123,10 +129,16 @@ namespace BuscadorTrabajo.Shared.DTOs
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            if (FechaInicio == default)
-            {
+            if(FechaInicio == default)
+{
                 yield return new ValidationResult(
                     "La fecha de inicio es obligatoria.",
+                    new[] { nameof(FechaInicio) });
+            }
+                else if (FechaInicio > DateOnly.FromDateTime(DateTime.Today))
+            {
+                yield return new ValidationResult(
+                    "La fecha de inicio no puede ser posterior a hoy.",
                     new[] { nameof(FechaInicio) });
             }
 
@@ -149,6 +161,8 @@ namespace BuscadorTrabajo.Shared.DTOs
     
     public class ExperienciaRegistroDTO : IValidatableObject
     {
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "La empresa es obligatoria.")]
         [MaxLength(100)]
         public string Empresa { get; set; }
@@ -199,6 +213,8 @@ namespace BuscadorTrabajo.Shared.DTOs
 
     public class CertificacionRegistroDTO : IValidatableObject
     {
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "El título de la certificación es obligatorio.")]
         [MaxLength(100)]
         public string Titulo { get; set; }

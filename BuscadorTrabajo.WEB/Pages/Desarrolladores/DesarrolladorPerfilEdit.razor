@@ -1,0 +1,323 @@
+﻿
+@page "/desarrolladores/perfil/edit/{Id:int}"
+
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar perfil profesional | SkillNet</PageTitle>
+
+<div class="bt-page">
+
+    <a class="bt-back" href="/desarrolladores">
+        ‹ Volver a desarrolladores
+    </a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar perfil profesional</h1>
+            <p class="bt-subtitle">
+                Actualiza la información profesional del desarrollador.
+                Puedes modificar los datos que necesites.
+            </p>
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="bt-loading-card" role="status">
+            <div class="bt-spinner"></div>
+            <h3>Cargando perfil profesional</h3>
+            <p>Estamos recuperando la información del desarrollador...</p>
+        </div>
+    }
+    else if (registro is null)
+    {
+        <div class="bt-empty">
+            <p>@errorCarga</p>
+
+            <a class="bt-btn bt-btn-primary"
+               href="/desarrolladores">
+                Volver a desarrolladores
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="bt-stepper">
+            <div class="bt-stepper-inner">
+
+                <div class="bt-stepper-track">
+                    <div class="bt-stepper-fill"
+                         style="width: @(ProgresoPorcentaje)%">
+                    </div>
+                </div>
+
+                <div class="bt-step-item @(pasoActual == 1 ? "is-active" : pasoActual > 1 ? "is-complete" : "")">
+                    <div class="bt-step-circle">
+                        @(pasoActual > 1 ? "✓" : "1")
+                    </div>
+                    <span>Datos personales</span>
+                </div>
+
+                <div class="bt-step-item @(pasoActual == 2 ? "is-active" : pasoActual > 2 ? "is-complete" : "")">
+                    <div class="bt-step-circle">
+                        @(pasoActual > 2 ? "✓" : "2")
+                    </div>
+                    <span>Perfil profesional</span>
+                </div>
+
+                <div class="bt-step-item @(pasoActual == 3 ? "is-active" : pasoActual > 3 ? "is-complete" : "")">
+                    <div class="bt-step-circle">
+                        @(pasoActual > 3 ? "✓" : "3")
+                    </div>
+                    <span>Educación</span>
+                </div>
+
+                <div class="bt-step-item @(pasoActual == 4 ? "is-active" : pasoActual > 4 ? "is-complete" : "")">
+                    <div class="bt-step-circle">
+                        @(pasoActual > 4 ? "✓" : "4")
+                    </div>
+                    <span>Experiencia</span>
+                </div>
+
+                <div class="bt-step-item @(pasoActual == 5 ? "is-active" : pasoActual > 5 ? "is-complete" : "")">
+                    <div class="bt-step-circle">
+                        @(pasoActual > 5 ? "✓" : "5")
+                    </div>
+                    <span>Certificaciones</span>
+                </div>
+
+                <div class="bt-step-item @(pasoActual == 6 ? "is-active" : pasoActual > 6 ? "is-complete" : "")">
+                    <div class="bt-step-circle">
+                        @(pasoActual > 6 ? "✓" : "6")
+                    </div>
+                    <span>Habilidades</span>
+                </div>
+
+                <div class="bt-step-item @(pasoActual == 7 ? "is-active" : "")">
+                    <div class="bt-step-circle">7</div>
+                    <span>Revisión</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="bt-stepper-caption">
+            Paso @pasoActual de 7
+        </div>
+
+        @if (pasoActual == 1)
+        {
+            <PasoDatosPersonales
+                Datos="registro.DatosPersonales"
+                OnContinuar="AvanzarAsync" />
+        }
+        else if (pasoActual == 2)
+        {
+            <PasoPerfilProfesional
+                Datos="registro.PerfilProfesional"
+                OnContinuar="AvanzarAsync"
+                OnVolver="RetrocederAsync" />
+        }
+        else if (pasoActual == 3)
+        {
+            <PasoEducacion
+                Datos="registro.Educaciones"
+                OnContinuar="AvanzarAsync"
+                OnVolver="RetrocederAsync" />
+        }
+        else if (pasoActual == 4)
+        {
+            <PasoExperiencia
+                Datos="registro.Experiencias"
+                OnContinuar="AvanzarAsync"
+                OnVolver="RetrocederAsync" />
+        }
+        else if (pasoActual == 5)
+        {
+            <PasoCertificaciones
+                Datos="registro.Certificaciones"
+                OnContinuar="AvanzarAsync"
+                OnVolver="RetrocederAsync" />
+        }
+        else if (pasoActual == 6)
+        {
+            <PasoHabilidades
+                Seleccionadas="registro.HabilidadesIds"
+                OnContinuar="AvanzarAsync"
+                OnVolver="RetrocederAsync" />
+        }
+        else if (pasoActual == 7)
+        {
+            @if (guardando)
+            {
+                <div class="bt-loading-card" role="status">
+                    <div class="bt-spinner"></div>
+
+                    <h3>Actualizando perfil profesional</h3>
+
+                    <p>
+                        Guardando los cambios realizados...
+                    </p>
+
+                    <div class="bt-loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <PasoRevisionRegistro
+                    Registro="registro"
+                    EsEdicion="true"
+                    OnVolver="RetrocederAsync"
+                    OnConfirmar="ActualizarAsync" />
+            }
+        }
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private RegistroDesarrolladorDTO registro;
+
+    private int pasoActual = 1;
+
+    private bool cargando = true;
+
+    private bool guardando = false;
+
+    private string errorCarga;
+
+    // Consultar el perfil completo del desarrollador.
+    protected override async Task OnParametersSetAsync()
+    {
+        cargando = true;
+        registro = null;
+        errorCarga = null;
+
+        try
+        {
+            var respuesta =
+                await repository.GetAsync<RegistroDesarrolladorDTO>(
+                    $"/api/desarrolladores/{Id}/perfil-completo");
+
+            if (respuesta.Error)
+            {
+                if (respuesta.HttpResponseMessage.StatusCode ==
+                    System.Net.HttpStatusCode.NotFound)
+                {
+                    errorCarga =
+                        "No se encontró el perfil profesional solicitado.";
+                }
+                else
+                {
+                    errorCarga = await respuesta.GetErrorMessageAsync();
+                }
+
+                return;
+            }
+
+            registro = respuesta.Response;
+
+            if (registro == null)
+            {
+                errorCarga =
+                    "No fue posible recuperar la información del perfil.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorCarga = $"Ocurrió un error al cargar el perfil: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    // Avanzar entre los pasos.
+    private Task AvanzarAsync()
+    {
+        if (pasoActual < 7)
+        {
+            pasoActual++;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    // Regresar entre los pasos.
+    private Task RetrocederAsync()
+    {
+        if (pasoActual > 1)
+        {
+            pasoActual--;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    // Actualizar el perfil profesional completo.
+    private async Task ActualizarAsync()
+    {
+        if (guardando || registro == null)
+        {
+            return;
+        }
+
+        guardando = true;
+
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var respuesta = await repository.PutAsync(
+                $"/api/desarrolladores/{Id}/perfil-completo",
+                registro);
+
+            if (respuesta.Error)
+            {
+                var mensaje = await respuesta.GetErrorMessageAsync();
+
+                await swal.FireAsync(
+                    "No se pudieron guardar los cambios",
+                    mensaje,
+                    SweetAlertIcon.Error);
+
+                return;
+            }
+
+            await swal.FireAsync(
+                "¡Perfil actualizado!",
+                "La información profesional se actualizó correctamente.",
+                SweetAlertIcon.Success);
+
+            navigationManager.NavigateTo(
+                $"/desarrolladores/detalle/{Id}");
+        }
+        catch (Exception ex)
+        {
+            await swal.FireAsync(
+                "Error inesperado",
+                ex.Message,
+                SweetAlertIcon.Error);
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private int ProgresoPorcentaje =>
+        pasoActual <= 1
+            ? 0
+            : (int)Math.Round(
+                (pasoActual - 1) * 100.0 / 6);
+}

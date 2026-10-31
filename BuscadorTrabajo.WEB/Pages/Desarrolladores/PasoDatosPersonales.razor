@@ -60,6 +60,7 @@
                     <label class="bt-label">Fecha de nacimiento</label>
                     <InputDate TValue="DateOnly"
                                class="form-control"
+                               max="@FechaMaxima"
                                @bind-Value="Datos.FechaNacimiento" />
                     <ValidationMessage For="@(() => Datos.FechaNacimiento)" />
                 </div>
@@ -80,4 +81,6 @@
 
     [Parameter]
     public EventCallback OnContinuar { get; set; }
+    private string FechaMaxima =>
+        DateTime.Today.ToString("yyyy-MM-dd");
 }

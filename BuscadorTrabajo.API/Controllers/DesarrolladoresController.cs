@@ -3,6 +3,7 @@ using BuscadorTrabajo.API.Helpers;
 using BuscadorTrabajo.Shared.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BuscadorTrabajo.Shared.DTOs;
 
 namespace BuscadorTrabajo.API.Controllers
 {
@@ -95,6 +96,114 @@ namespace BuscadorTrabajo.API.Controllers
             catch (DbUpdateException ex) when (ErroresBaseDatos.EsDuplicado(ex))
             {
                 return Conflict("Ya existe un desarrollador con esa cédula."); //409
+            }
+        }
+
+        [HttpPost("registro-completo")]
+        public async Task<ActionResult> RegistrarCompleto(
+        [FromBody] RegistroDesarrolladorDTO registro)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Crear los datos personales del desarrollador.
+                var desarrollador = new Desarrollador
+                {
+                    Cedula = registro.DatosPersonales.Cedula,
+                    Nombre = registro.DatosPersonales.Nombre,
+                    Apellido = registro.DatosPersonales.Apellido,
+                    Celular = registro.DatosPersonales.Celular,
+                    Correo = registro.DatosPersonales.Correo,
+                    FechaNacimiento = registro.DatosPersonales.FechaNacimiento
+                };
+
+                _context.Desarrolladores.Add(desarrollador);
+                await _context.SaveChangesAsync();
+
+                // 2. Crear el perfil profesional asociado al desarrollador.
+                var perfil = new PerfilProfesional
+                {
+                    IdDesarrollador = desarrollador.Id,
+                    TituloProfesional = registro.PerfilProfesional.TituloProfesional,
+                    Descripcion = registro.PerfilProfesional.Descripcion,
+                    Pais = registro.PerfilProfesional.Pais,
+                    Ciudad = registro.PerfilProfesional.Ciudad,
+                    Modalidad = registro.PerfilProfesional.Modalidad,
+                    GitHub = registro.PerfilProfesional.GitHub,
+                    LinkedIn = registro.PerfilProfesional.LinkedIn
+                };
+
+                _context.PerfilesProfesionales.Add(perfil);
+                await _context.SaveChangesAsync();
+
+                // 3. Registrar la formación académica.
+                var educaciones = registro.Educaciones.Select(e => new Educacion
+                {
+                    IdPerfilProfesional = perfil.Id,
+                    NivelEducativo = e.NivelEducativo,
+                    Institucion = e.Institucion,
+                    Titulo = e.Titulo,
+                    FechaInicio = e.FechaInicio,
+                    FechaFin = e.FechaFin,
+                    EnCurso = e.EnCurso
+                }).ToList();
+
+                // 4. Registrar la experiencia laboral.
+                var experiencias = registro.Experiencias.Select(e => new Experiencia
+                {
+                    IdPerfilProfesional = perfil.Id,
+                    Empresa = e.Empresa,
+                    Cargo = e.Cargo,
+                    Descripcion = e.Descripcion,
+                    FechaInicio = e.FechaInicio,
+                    FechaFin = e.FechaFin,
+                    EstadoActual = e.EstadoActual
+                }).ToList();
+
+                // 5. Registrar las certificaciones.
+                var certificaciones = registro.Certificaciones.Select(c => new Certificacion
+                {
+                    IdPerfilProfesional = perfil.Id,
+                    Titulo = c.Titulo,
+                    Institucion = c.Institucion,
+                    FechaEmision = c.FechaEmision,
+                    FechaVencimiento = c.FechaVencimiento,
+                    UrlCertificado = c.UrlCertificado
+                }).ToList();
+
+                // 6. Agregar los registros relacionados.
+                _context.Educaciones.AddRange(educaciones);
+                _context.Experiencias.AddRange(experiencias);
+                _context.Certificaciones.AddRange(certificaciones);
+
+                await _context.SaveChangesAsync();
+
+                // 7. Confirmar toda la operación.
+                await transaction.CommitAsync();
+
+                return CreatedAtAction(
+                    nameof(Get),
+                    new { id = desarrollador.Id },
+                    new
+                    {
+                        mensaje = "El registro del desarrollador se completó correctamente.",
+                        idDesarrollador = desarrollador.Id,
+                        idPerfilProfesional = perfil.Id
+                    });
+            }
+            catch (DbUpdateException ex) when (ErroresBaseDatos.EsDuplicado(ex))
+            {
+                await transaction.RollbackAsync();
+
+                return Conflict(
+                    "Ya existe un desarrollador registrado con esa cédula.");
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 

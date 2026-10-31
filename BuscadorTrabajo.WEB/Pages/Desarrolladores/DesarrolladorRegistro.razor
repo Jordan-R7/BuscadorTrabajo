@@ -1,0 +1,225 @@
+﻿
+@page "/desarrolladores/registro"
+
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Registro de desarrollador | SkillNet</PageTitle>
+
+<div class="bt-page">
+    <a class="bt-back" href="/desarrolladores">
+        ‹ Volver a desarrolladores
+    </a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Crear perfil de desarrollador</h1>
+            <p class="bt-subtitle">
+                Completa los siguientes pasos para crear tu perfil profesional.
+            </p>
+        </div>
+    </div>
+
+    
+<div class="bt-stepper">
+    <div class="bt-stepper-inner">
+
+        <div class="bt-stepper-track">
+            <div class="bt-stepper-fill"
+                 style="width: @(ProgresoPorcentaje)%">
+            </div>
+        </div>
+
+        <div class="bt-step-item @(pasoActual == 1 ? "is-active" : pasoActual > 1 ? "is-complete" : "")">
+            <div class="bt-step-circle">
+                @(pasoActual > 1 ? "✓" : "1")
+            </div>
+            <span>Datos personales</span>
+        </div>
+
+        <div class="bt-step-item @(pasoActual == 2 ? "is-active" : pasoActual > 2 ? "is-complete" : "")">
+            <div class="bt-step-circle">
+                @(pasoActual > 2 ? "✓" : "2")
+            </div>
+            <span>Perfil profesional</span>
+        </div>
+
+        <div class="bt-step-item @(pasoActual == 3 ? "is-active" : pasoActual > 3 ? "is-complete" : "")">
+            <div class="bt-step-circle">
+                @(pasoActual > 3 ? "✓" : "3")
+            </div>
+            <span>Educación</span>
+        </div>
+
+        <div class="bt-step-item @(pasoActual == 4 ? "is-active" : pasoActual > 4 ? "is-complete" : "")">
+            <div class="bt-step-circle">
+                @(pasoActual > 4 ? "✓" : "4")
+            </div>
+            <span>Experiencia</span>
+        </div>
+
+        <div class="bt-step-item @(pasoActual == 5 ? "is-active" : pasoActual > 5 ? "is-complete" : "")">
+            <div class="bt-step-circle">
+                @(pasoActual > 5 ? "✓" : "5")
+            </div>
+            <span>Certificaciones</span>
+        </div>
+
+        <div class="bt-step-item @(pasoActual == 6 ? "is-active" : "")">
+            <div class="bt-step-circle">6</div>
+            <span>Revisión</span>
+        </div>
+
+    </div>
+</div>
+
+<div class="bt-stepper-caption">
+    Paso @pasoActual de 6
+</div>
+
+
+    @if (pasoActual == 1)
+    {
+        <PasoDatosPersonales
+            Datos="registro.DatosPersonales"
+            OnContinuar="AvanzarAsync" />
+    }
+    else if (pasoActual == 2)
+    {
+        <PasoPerfilProfesional
+            Datos="registro.PerfilProfesional"
+            OnContinuar="AvanzarAsync"
+            OnVolver="RetrocederAsync" />
+    }
+    else if (pasoActual == 3)
+    {
+        <PasoEducacion
+            Datos="registro.Educaciones"
+            OnContinuar="AvanzarAsync"
+            OnVolver="RetrocederAsync" />
+    }
+    else if (pasoActual == 4)
+    {
+        <PasoExperiencia
+            Datos="registro.Experiencias"
+            OnContinuar="AvanzarAsync"
+            OnVolver="RetrocederAsync" />
+    }
+    else if (pasoActual == 5)
+    {
+        <PasoCertificaciones
+            Datos="registro.Certificaciones"
+            OnContinuar="AvanzarAsync"
+            OnVolver="RetrocederAsync" />
+    }
+    else if (pasoActual == 6)
+    {
+       @if (guardando)
+{
+    <div class="bt-loading-card" role="status" aria-live="polite">
+        <div class="bt-spinner"></div>
+
+        <h3>Estamos creando tu perfil</h3>
+
+        <p>
+            Guardando tus datos personales y profesionales...
+        </p>
+
+        <div class="bt-loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+}
+        else
+        {
+            <PasoRevisionRegistro
+                Registro="registro"
+                OnVolver="RetrocederAsync"
+                OnConfirmar="RegistrarAsync" />
+        }
+    }
+</div>
+
+@code {
+    private RegistroDesarrolladorDTO registro = new();
+
+    private int pasoActual = 1;
+
+    private bool guardando = false;
+
+    private Task AvanzarAsync()
+    {
+        if (pasoActual < 6)
+        {
+            pasoActual++;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task RetrocederAsync()
+    {
+        if (pasoActual > 1)
+        {
+            pasoActual--;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task RegistrarAsync()
+    {
+        if (guardando)
+        {
+            return;
+        }
+
+        guardando = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var respuesta = await repository.PostAsync(
+                "/api/desarrolladores/registro-completo",
+                registro);
+
+            if (respuesta.Error)
+            {
+                var mensaje = await respuesta.GetErrorMessageAsync();
+
+                await swal.FireAsync(
+                    "No se pudo completar el registro",
+                    mensaje,
+                    SweetAlertIcon.Error);
+
+                return;
+            }
+
+            await swal.FireAsync(
+                "¡Registro exitoso!",
+                "El desarrollador y su perfil profesional fueron registrados correctamente.",
+                SweetAlertIcon.Success);
+
+            navigationManager.NavigateTo("/desarrolladores");
+        }
+        catch (Exception ex)
+        {
+            await swal.FireAsync(
+                "Error inesperado",
+                ex.Message,
+                SweetAlertIcon.Error);
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private int ProgresoPorcentaje =>
+        pasoActual <= 1
+            ? 0
+            : (int)Math.Round((pasoActual - 1) * 100.0 / 5);
+}

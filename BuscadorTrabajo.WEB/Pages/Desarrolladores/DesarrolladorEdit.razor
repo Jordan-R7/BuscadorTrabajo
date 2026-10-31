@@ -1,0 +1,222 @@
+﻿
+@page "/desarrolladores/edit/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar desarrollador | SkillNet</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/desarrolladores">
+        ‹ Volver a desarrolladores
+    </a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar desarrollador</h1>
+            <p class="bt-subtitle">
+                Actualiza la información personal y de contacto.
+            </p>
+        </div>
+    </div>
+
+    @if (desarrollador is null)
+    {
+        <div class="bt-empty">
+            Cargando información del desarrollador...
+        </div>
+    }
+    else
+    {
+        <div class="bt-form-card">
+            <EditForm Model="desarrollador"
+                      OnValidSubmit="EditAsync">
+
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="bt-form-section">
+                    <h2 class="bt-form-section-title">
+                        Información personal
+                    </h2>
+
+                    <div class="bt-form-grid">
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Cédula</label>
+
+                            <InputText class="form-control"
+                                       @bind-Value="desarrollador.Cedula"
+                                       maxlength="10"
+                                       placeholder="Número de identificación" />
+
+                            <ValidationMessage For="@(() => desarrollador.Cedula)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Nombre</label>
+
+                            <InputText class="form-control"
+                                       @bind-Value="desarrollador.Nombre"
+                                       placeholder="Nombre" />
+
+                            <ValidationMessage For="@(() => desarrollador.Nombre)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Apellido</label>
+
+                            <InputText class="form-control"
+                                       @bind-Value="desarrollador.Apellido"
+                                       placeholder="Apellido" />
+
+                            <ValidationMessage For="@(() => desarrollador.Apellido)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bt-form-section">
+                    <h2 class="bt-form-section-title">
+                        Información de contacto
+                    </h2>
+
+                    <div class="bt-form-grid">
+                        <div class="bt-field">
+                            <label class="bt-label">Celular</label>
+
+                            <InputText class="form-control"
+                                       type="tel"
+                                       @bind-Value="desarrollador.Celular"
+                                       placeholder="Ej. 3001234567" />
+
+                            <ValidationMessage For="@(() => desarrollador.Celular)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Correo electrónico</label>
+
+                            <InputText class="form-control"
+                                       type="email"
+                                       @bind-Value="desarrollador.Correo"
+                                       placeholder="nombre@correo.com" />
+
+                            <ValidationMessage For="@(() => desarrollador.Correo)" />
+                        </div>
+
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Fecha de nacimiento</label>
+
+                            <InputDate TValue="DateOnly"
+                                       class="form-control"
+                                       @bind-Value="desarrollador.FechaNacimiento" />
+
+                            <ValidationMessage For="@(() => desarrollador.FechaNacimiento)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bt-form-actions">
+                    <button type="button"
+                            class="bt-btn bt-btn-ghost"
+                            @onclick="Return">
+                        Cancelar
+                    </button>
+
+                    <button type="submit"
+                            class="bt-btn bt-btn-primary"
+                            disabled="@guardando">
+                        @(guardando ? "Guardando..." : "Guardar cambios")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    }
+</div>
+
+@code {
+    private Desarrollador desarrollador;
+    private bool guardando = false;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    // Consultar desarrollador: GET /api/desarrolladores/{id}
+    protected override async Task OnParametersSetAsync()
+    {
+        var responseHttp =
+            await repository.GetAsync<Desarrollador>(
+                $"/api/desarrolladores/{Id}");
+
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode ==
+                System.Net.HttpStatusCode.NotFound)
+            {
+                await swal.FireAsync(
+                    "No encontrado",
+                    "No existe un desarrollador con ese identificador.",
+                    SweetAlertIcon.Warning);
+
+                navigationManager.NavigateTo("/desarrolladores");
+                return;
+            }
+
+            var mensaje = await responseHttp.GetErrorMessageAsync();
+
+            await swal.FireAsync(
+                "Error",
+                mensaje,
+                SweetAlertIcon.Error);
+
+            return;
+        }
+
+        desarrollador = responseHttp.Response;
+    }
+
+    // Actualizar desarrollador: PUT /api/desarrolladores
+    private async Task EditAsync()
+    {
+        if (guardando || desarrollador is null)
+        {
+            return;
+        }
+
+        guardando = true;
+
+        try
+        {
+            var responseHttp =
+                await repository.PutAsync(
+                    "/api/desarrolladores",
+                    desarrollador);
+
+            if (responseHttp.Error)
+            {
+                var mensaje = await responseHttp.GetErrorMessageAsync();
+
+                await swal.FireAsync(
+                    "No se pudieron guardar los cambios",
+                    mensaje,
+                    SweetAlertIcon.Error);
+
+                return;
+            }
+
+            await swal.FireAsync(
+                "Actualizado",
+                "Los datos del desarrollador se actualizaron correctamente.",
+                SweetAlertIcon.Success);
+
+            navigationManager.NavigateTo("/desarrolladores");
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/desarrolladores");
+    }
+}

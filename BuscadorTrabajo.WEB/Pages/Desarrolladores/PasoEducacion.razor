@@ -1,0 +1,205 @@
+﻿
+<div class="bt-form-card">
+    <div class="bt-form-section">
+        <h2 class="bt-form-section-title">Formación académica</h2>
+
+        <p class="bt-subtitle">
+            Agrega tus estudios y formación académica.
+            Puedes registrar más de uno o continuar sin agregar registros.
+        </p>
+
+        @if (estados.Count == 0)
+        {
+            <div class="bt-hint">
+                Todavía no has agregado ninguna formación académica.
+            </div>
+        }
+
+        @foreach (var estado in estados)
+        {
+            <div class="bt-form-section">
+                <div class="bt-page-header">
+                    <h3 class="bt-form-section-title">
+                        Estudio @(estados.IndexOf(estado) + 1)
+                    </h3>
+
+                    <button type="button"
+                            class="bt-btn bt-btn-ghost"
+                            @onclick="() => EliminarEducacion(estado)">
+                        Eliminar
+                    </button>
+                </div>
+
+                <EditForm EditContext="estado.Contexto">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="bt-form-grid">
+                        <div class="bt-field">
+                            <label class="bt-label">Nivel educativo</label>
+                            <InputSelect class="form-select"
+                                         @bind-Value="estado.Datos.NivelEducativo">
+                                <option value="">Selecciona un nivel</option>
+                                <option value="Primaria">Primaria</option>
+                                <option value="Bachillerato">Bachillerato</option>
+                                <option value="Tecnico">Técnico</option>
+                                <option value="Tecnologo">Tecnólogo</option>
+                                <option value="Universitario">Universitario</option>
+                                <option value="Postgrado">Postgrado</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => estado.Datos.NivelEducativo)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Institución</label>
+                            <InputText class="form-control"
+                                       @bind-Value="estado.Datos.Institucion"
+                                       placeholder="Nombre de la institución" />
+                            <ValidationMessage For="@(() => estado.Datos.Institucion)" />
+                        </div>
+
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Título obtenido o en formación</label>
+                            <InputText class="form-control"
+                                       @bind-Value="estado.Datos.Titulo"
+                                       placeholder="Ej. Tecnología en Desarrollo de Software" />
+                            <ValidationMessage For="@(() => estado.Datos.Titulo)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Fecha de inicio</label>
+                            <InputDate TValue="DateOnly"
+                                       class="form-control"
+                                       @bind-Value="estado.Datos.FechaInicio" />
+                            <ValidationMessage For="@(() => estado.Datos.FechaInicio)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Fecha de finalización</label>
+                            <InputDate TValue="DateOnly?"
+                                       class="form-control"
+                                       @bind-Value="estado.Datos.FechaFin"
+                                       disabled="@estado.Datos.EnCurso" />
+                            <ValidationMessage For="@(() => estado.Datos.FechaFin)" />
+                        </div>
+
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">
+                                <InputCheckbox class="form-check-input"
+                                               @bind-Value="estado.Datos.EnCurso"
+                                               @bind-Value:after="() => CambioEnCurso(estado)" />
+                                Actualmente estoy cursando estos estudios
+                            </label>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        }
+
+        <div class="bt-form-actions">
+            <button type="button"
+                    class="bt-btn bt-btn-ghost"
+                    @onclick="AgregarEducacion">
+                + Agregar formación
+            </button>
+        </div>
+    </div>
+
+    <div class="bt-form-actions">
+        <button type="button"
+                class="bt-btn bt-btn-ghost"
+                @onclick="OnVolver">
+            ← Atrás
+        </button>
+
+        <button type="button"
+                class="bt-btn bt-btn-primary"
+                @onclick="ContinuarAsync">
+            Continuar →
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<EducacionRegistroDTO> Datos { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnContinuar { get; set; }
+
+    [Parameter]
+    public EventCallback OnVolver { get; set; }
+
+    private List<EducacionState> estados = new();
+
+    protected override void OnParametersSet()
+    {
+        // Mantener los EditContext asociados a cada estudio.
+        foreach (var educacion in Datos)
+        {
+            if (!estados.Any(x => ReferenceEquals(x.Datos, educacion)))
+            {
+                estados.Add(new EducacionState(educacion));
+            }
+        }
+
+        estados.RemoveAll(x => !Datos.Any(
+            d => ReferenceEquals(d, x.Datos)));
+    }
+
+    private void AgregarEducacion()
+    {
+        var nueva = new EducacionRegistroDTO
+        {
+            FechaInicio = DateOnly.FromDateTime(DateTime.Today)
+        };
+
+        Datos.Add(nueva);
+        estados.Add(new EducacionState(nueva));
+    }
+
+    private void EliminarEducacion(EducacionState estado)
+    {
+        Datos.Remove(estado.Datos);
+        estados.Remove(estado);
+    }
+
+    private void CambioEnCurso(EducacionState estado)
+    {
+        if (estado.Datos.EnCurso)
+        {
+            estado.Datos.FechaFin = null;
+        }
+    }
+
+    private async Task ContinuarAsync()
+    {
+        // Validar individualmente todos los estudios registrados.
+        var valido = true;
+
+        foreach (var estado in estados)
+        {
+            if (!estado.Contexto.Validate())
+            {
+                valido = false;
+            }
+        }
+
+        if (valido)
+        {
+            await OnContinuar.InvokeAsync();
+        }
+    }
+
+    private sealed class EducacionState
+    {
+        public EducacionRegistroDTO Datos { get; }
+        public EditContext Contexto { get; }
+
+        public EducacionState(EducacionRegistroDTO datos)
+        {
+            Datos = datos;
+            Contexto = new EditContext(datos);
+        }
+    }
+}

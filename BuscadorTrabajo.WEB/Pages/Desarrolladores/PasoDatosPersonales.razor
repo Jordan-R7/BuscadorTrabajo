@@ -1,0 +1,83 @@
+﻿
+<div class="bt-form-card">
+    <EditForm Model="Datos" OnValidSubmit="OnContinuar">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Información personal</h2>
+
+            <p class="bt-subtitle">
+                Cuéntanos quién eres. Estos datos permitirán identificar
+                tu perfil dentro de SkillNet.
+            </p>
+
+            <div class="bt-form-grid">
+                <div class="bt-field">
+                    <label class="bt-label">Cédula</label>
+                    <InputText class="form-control"
+                               @bind-Value="Datos.Cedula"
+                               placeholder="Número de identificación"
+                               maxlength="10" />
+                    <ValidationMessage For="@(() => Datos.Cedula)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Celular</label>
+                    <InputText class="form-control"
+                               type="tel"
+                               @bind-Value="Datos.Celular"
+                               placeholder="Ej. 3001234567" />
+                    <ValidationMessage For="@(() => Datos.Celular)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Nombre</label>
+                    <InputText class="form-control"
+                               @bind-Value="Datos.Nombre"
+                               placeholder="Tus nombres" />
+                    <ValidationMessage For="@(() => Datos.Nombre)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Apellido</label>
+                    <InputText class="form-control"
+                               @bind-Value="Datos.Apellido"
+                               placeholder="Tus apellidos" />
+                    <ValidationMessage For="@(() => Datos.Apellido)" />
+                </div>
+
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Correo electrónico</label>
+                    <InputText class="form-control"
+                               type="email"
+                               @bind-Value="Datos.Correo"
+                               placeholder="nombre@correo.com" />
+                    <ValidationMessage For="@(() => Datos.Correo)" />
+                </div>
+
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Fecha de nacimiento</label>
+                    <InputDate TValue="DateOnly"
+                               class="form-control"
+                               @bind-Value="Datos.FechaNacimiento" />
+                    <ValidationMessage For="@(() => Datos.FechaNacimiento)" />
+                </div>
+            </div>
+        </div>
+
+        <div class="bt-form-actions">
+            <button type="submit" class="bt-btn bt-btn-primary">
+                Continuar →
+            </button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public DesarrolladorRegistroDTO Datos { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnContinuar { get; set; }
+}

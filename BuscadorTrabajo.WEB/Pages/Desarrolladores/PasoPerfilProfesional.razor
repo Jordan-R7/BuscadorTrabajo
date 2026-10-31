@@ -1,0 +1,107 @@
+﻿
+<div class="bt-form-card">
+    <EditForm Model="Datos" OnValidSubmit="OnContinuar">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Perfil profesional</h2>
+
+            <p class="bt-subtitle">
+                Describe tu perfil, tu ubicación y la modalidad
+                de trabajo que prefieres.
+            </p>
+
+            <div class="bt-form-grid">
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Título profesional</label>
+                    <InputText class="form-control"
+                               @bind-Value="Datos.TituloProfesional"
+                               placeholder="Ej. Tecnólogo en Desarrollo de Software" />
+                    <ValidationMessage For="@(() => Datos.TituloProfesional)" />
+                </div>
+
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Descripción profesional</label>
+                    <InputTextArea class="form-control"
+                                   @bind-Value="Datos.Descripcion"
+                                   rows="4"
+                                   maxlength="500"
+                                   placeholder="Cuéntanos sobre tus conocimientos, intereses y objetivos profesionales..." />
+                    <ValidationMessage For="@(() => Datos.Descripcion)" />
+                    <span class="bt-hint">Máximo 500 caracteres.</span>
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">País</label>
+                    <InputText class="form-control"
+                               @bind-Value="Datos.Pais"
+                               placeholder="Ej. Colombia" />
+                    <ValidationMessage For="@(() => Datos.Pais)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Ciudad</label>
+                    <InputText class="form-control"
+                               @bind-Value="Datos.Ciudad"
+                               placeholder="Ej. Medellín" />
+                    <ValidationMessage For="@(() => Datos.Ciudad)" />
+                </div>
+
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Modalidad de trabajo</label>
+                    <InputSelect class="form-select"
+                                 @bind-Value="Datos.Modalidad">
+                        <option value="">Selecciona una modalidad</option>
+                        <option value="REMOTO">Remoto</option>
+                        <option value="HIBRIDO">Híbrido</option>
+                        <option value="PRESENCIAL">Presencial</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Datos.Modalidad)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Perfil de GitHub</label>
+                    <InputText class="form-control"
+                               type="url"
+                               @bind-Value="Datos.GitHub"
+                               placeholder="https://github.com/usuario" />
+                    <ValidationMessage For="@(() => Datos.GitHub)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Perfil de LinkedIn</label>
+                    <InputText class="form-control"
+                               type="url"
+                               @bind-Value="Datos.LinkedIn"
+                               placeholder="https://linkedin.com/in/usuario" />
+                    <ValidationMessage For="@(() => Datos.LinkedIn)" />
+                </div>
+            </div>
+        </div>
+
+        <div class="bt-form-actions">
+            <button type="button"
+                    class="bt-btn bt-btn-ghost"
+                    @onclick="OnVolver">
+                ← Atrás
+            </button>
+
+            <button type="submit"
+                    class="bt-btn bt-btn-primary">
+                Continuar →
+            </button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public PerfilProfesionalRegistroDTO Datos { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnContinuar { get; set; }
+
+    [Parameter]
+    public EventCallback OnVolver { get; set; }
+}

@@ -1,0 +1,186 @@
+﻿
+<div class="bt-form-card">
+    <div class="bt-form-section">
+        <h2 class="bt-form-section-title">Certificaciones</h2>
+
+        <p class="bt-subtitle">
+            Agrega las certificaciones y credenciales que respaldan
+            tus conocimientos y competencias profesionales.
+        </p>
+
+        @if (estados.Count == 0)
+        {
+            <div class="bt-hint">
+                Todavía no has agregado certificaciones.
+                Puedes continuar sin registrar ninguna.
+            </div>
+        }
+
+        @foreach (var estado in estados)
+        {
+            <div class="bt-form-section">
+                <div class="bt-page-header">
+                    <h3 class="bt-form-section-title">
+                        Certificación @(estados.IndexOf(estado) + 1)
+                    </h3>
+
+                    <button type="button"
+                            class="bt-btn bt-btn-ghost"
+                            @onclick="() => EliminarCertificacion(estado)">
+                        Eliminar
+                    </button>
+                </div>
+
+                <EditForm EditContext="estado.Contexto">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="bt-form-grid">
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Nombre de la certificación</label>
+                            <InputText class="form-control"
+                                       @bind-Value="estado.Datos.Titulo"
+                                       placeholder="Ej. Meta Front-End Developer" />
+                            <ValidationMessage For="@(() => estado.Datos.Titulo)" />
+                        </div>
+
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Institución emisora</label>
+                            <InputText class="form-control"
+                                       @bind-Value="estado.Datos.Institucion"
+                                       placeholder="Ej. Meta, Microsoft, Google..." />
+                            <ValidationMessage For="@(() => estado.Datos.Institucion)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Fecha de emisión</label>
+                            <InputDate TValue="DateOnly"
+                                       class="form-control"
+                                       @bind-Value="estado.Datos.FechaEmision" />
+                            <ValidationMessage For="@(() => estado.Datos.FechaEmision)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Fecha de vencimiento</label>
+                            <InputDate TValue="DateOnly?"
+                                       class="form-control"
+                                       @bind-Value="estado.Datos.FechaVencimiento" />
+                            <ValidationMessage For="@(() => estado.Datos.FechaVencimiento)" />
+                            <span class="bt-hint">
+                                Déjala vacía si la certificación no vence.
+                            </span>
+                        </div>
+
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">URL del certificado</label>
+                            <InputText class="form-control"
+                                       type="url"
+                                       @bind-Value="estado.Datos.UrlCertificado"
+                                       placeholder="https://..." />
+                            <ValidationMessage For="@(() => estado.Datos.UrlCertificado)" />
+                            <span class="bt-hint">
+                                Puedes incluir un enlace público para consultar tu certificado.
+                            </span>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        }
+
+        <div class="bt-form-actions">
+            <button type="button"
+                    class="bt-btn bt-btn-ghost"
+                    @onclick="AgregarCertificacion">
+                + Agregar certificación
+            </button>
+        </div>
+    </div>
+
+    <div class="bt-form-actions">
+        <button type="button"
+                class="bt-btn bt-btn-ghost"
+                @onclick="OnVolver">
+            ← Atrás
+        </button>
+
+        <button type="button"
+                class="bt-btn bt-btn-primary"
+                @onclick="ContinuarAsync">
+            Revisar registro →
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<CertificacionRegistroDTO> Datos { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnContinuar { get; set; }
+
+    [Parameter]
+    public EventCallback OnVolver { get; set; }
+
+    private List<CertificacionState> estados = new();
+
+    protected override void OnParametersSet()
+    {
+        foreach (var certificacion in Datos)
+        {
+            if (!estados.Any(x => ReferenceEquals(x.Datos, certificacion)))
+            {
+                estados.Add(new CertificacionState(certificacion));
+            }
+        }
+
+        estados.RemoveAll(x => !Datos.Any(
+            d => ReferenceEquals(d, x.Datos)));
+    }
+
+    private void AgregarCertificacion()
+    {
+        var nueva = new CertificacionRegistroDTO
+        {
+            FechaEmision = DateOnly.FromDateTime(DateTime.Today)
+        };
+
+        Datos.Add(nueva);
+        estados.Add(new CertificacionState(nueva));
+    }
+
+    private void EliminarCertificacion(CertificacionState estado)
+    {
+        Datos.Remove(estado.Datos);
+        estados.Remove(estado);
+    }
+
+    private async Task ContinuarAsync()
+    {
+        var valido = true;
+
+        foreach (var estado in estados)
+        {
+            if (!estado.Contexto.Validate())
+            {
+                valido = false;
+            }
+        }
+
+        if (valido)
+        {
+            await OnContinuar.InvokeAsync();
+        }
+    }
+
+    private sealed class CertificacionState
+    {
+        public CertificacionRegistroDTO Datos { get; }
+        public EditContext Contexto { get; }
+
+        public CertificacionState(CertificacionRegistroDTO datos)
+        {
+            Datos = datos;
+            Contexto = new EditContext(datos);
+        }
+    }
+}

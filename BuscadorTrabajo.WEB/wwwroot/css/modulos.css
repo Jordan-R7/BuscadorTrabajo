@@ -884,3 +884,314 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+
+/* Estado de carga del registro */
+
+.bt-loading-card {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 32px;
+    background: #0D1B25;
+    border: 1px solid #29404A;
+    border-radius: 20px;
+    text-align: center;
+}
+
+    .bt-loading-card h3 {
+        color: #F2F7F6;
+        font-size: 1.2rem;
+        margin: 0;
+    }
+
+    .bt-loading-card p {
+        color: #A9C3C8;
+        margin: 0;
+    }
+
+.bt-spinner {
+    width: 46px;
+    height: 46px;
+    border: 4px solid #29404A;
+    border-top-color: #63D9F2;
+    border-radius: 50%;
+    animation: bt-spin 0.8s linear infinite;
+}
+
+.bt-loading-dots {
+    display: flex;
+    gap: 7px;
+}
+
+    .bt-loading-dots span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #63D9F2;
+        animation: bt-pulse 1s ease-in-out infinite;
+    }
+
+        .bt-loading-dots span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .bt-loading-dots span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+@keyframes bt-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes bt-pulse {
+    0%, 80%, 100% {
+        opacity: 0.35;
+        transform: scale(0.7);
+    }
+
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+
+/* ---------- Datos del perfil de desarrollador ---------- */
+
+.bt-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.bt-detail-item {
+    min-width: 0;
+    padding: 14px 16px;
+    background: var(--sn-bg);
+    border: 1px solid var(--sn-border);
+    border-radius: 12px;
+    transition: border-color 0.2s ease;
+}
+
+    .bt-detail-item:hover {
+        border-color: rgba(99, 217, 242, 0.45);
+    }
+
+.bt-detail-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--sn-muted);
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.bt-detail-value {
+    display: block;
+    color: var(--sn-text);
+    font-size: 15px;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+    .bt-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bt-detail-item-full {
+    grid-column: 1 / -1;
+}
+
+.bt-detail-description {
+    color: var(--sn-mineral);
+    font-size: 14px;
+    line-height: 1.65;
+    margin: 0;
+}
+
+.bt-detail-link {
+    color: var(--sn-primary);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+    .bt-detail-link:hover {
+        color: var(--sn-primary-hover);
+        text-decoration: underline;
+    }
+
+
+/* ---------- Registros del perfil profesional ---------- */
+
+.bt-record-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.bt-record-card {
+    min-width: 0;
+    padding: 18px;
+    background: var(--sn-bg);
+    border: 1px solid var(--sn-border);
+    border-radius: 13px;
+    transition: border-color 0.2s ease;
+}
+
+    .bt-record-card:hover {
+        border-color: rgba(99, 217, 242, 0.45);
+    }
+
+.bt-record-title {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--sn-text);
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.bt-record-subtitle {
+    margin: 0 0 14px;
+    color: var(--sn-muted);
+    font-size: 14px;
+}
+
+.bt-record-dates {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sn-border);
+}
+
+.bt-record-date-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--sn-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.bt-record-date-value {
+    color: var(--sn-mineral);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.bt-record-status {
+    display: inline-flex;
+    padding: 5px 10px;
+    margin-bottom: 12px;
+    border-radius: 20px;
+    background: rgba(99, 217, 242, 0.12);
+    color: var(--sn-primary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+/* ---------- Barra de progreso del registro ---------- */
+
+.bt-stepper {
+    width: 100%;
+    overflow-x: auto;
+    margin: 12px 0 8px;
+    padding: 18px 12px;
+    background: var(--sn-surface);
+    border: 1px solid var(--sn-border);
+    border-radius: 16px;
+}
+
+.bt-stepper-inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    min-width: 640px;
+}
+
+.bt-stepper-track {
+    position: absolute;
+    top: 17px;
+    left: 8.333%;
+    right: 8.333%;
+    height: 3px;
+    background: var(--sn-border);
+    border-radius: 10px;
+    z-index: 0;
+}
+
+.bt-stepper-fill {
+    height: 100%;
+    background: var(--sn-primary);
+    border-radius: 10px;
+    transition: width 0.35s ease;
+}
+
+.bt-step-item {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    text-align: center;
+    color: var(--sn-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.bt-step-circle {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--sn-border);
+    border-radius: 50%;
+    background: var(--sn-surface);
+    color: var(--sn-muted);
+    font-size: 13px;
+    font-weight: 750;
+    transition: all 0.3s ease;
+}
+
+.bt-step-item.is-active {
+    color: var(--sn-primary);
+}
+
+    .bt-step-item.is-active .bt-step-circle {
+        border-color: var(--sn-primary);
+        background: rgba(99, 217, 242, 0.14);
+        color: var(--sn-primary);
+        box-shadow: 0 0 14px rgba(99, 217, 242, 0.16);
+    }
+
+.bt-step-item.is-complete .bt-step-circle {
+    border-color: var(--sn-primary);
+    background: var(--sn-primary);
+    color: var(--sn-bg);
+}
+
+.bt-step-item.is-complete {
+    color: var(--sn-mineral);
+}
+
+.bt-stepper-caption {
+    margin: 8px 2px 22px;
+    color: var(--sn-muted);
+    font-size: 13px;
+    text-align: right;
+}

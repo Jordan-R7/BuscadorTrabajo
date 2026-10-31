@@ -10,7 +10,10 @@
 
     @if (publicacion is null)
     {
-        <div class="bt-empty">Cargando...</div>
+        <div class="bt-loading-card" role="status" aria-live="polite">
+    <div class="bt-spinner"></div>
+    <p>Cargando información...</p>
+    </div>
     }
     else
     {

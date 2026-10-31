@@ -27,7 +27,10 @@
 
     @if (publicaciones is null)
     {
-        <div class="bt-empty">Cargando publicaciones...</div>
+        <div class="bt-loading-card" role="status" aria-live="polite">
+    <div class="bt-spinner"></div>
+    <p>Cargando publicaciones...</p>
+    </div>
     }
     else
     {

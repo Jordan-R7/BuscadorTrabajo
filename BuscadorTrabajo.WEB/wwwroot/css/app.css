@@ -226,3 +226,28 @@ a {
     background-color: var(--sn-primary);
     color: var(--sn-bg);
 }
+
+/* Pantalla inicial mientras Blazor carga */
+.sn-initial-loader {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: var(--sn-bg);
+}
+
+    .sn-initial-loader h2 {
+        color: var(--sn-text);
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 8px 0 0;
+    }
+
+    .sn-initial-loader p {
+        color: var(--sn-muted);
+        margin: 0;
+        font-size: 0.95rem;
+    }

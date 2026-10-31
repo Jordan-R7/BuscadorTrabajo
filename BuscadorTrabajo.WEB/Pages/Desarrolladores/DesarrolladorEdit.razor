@@ -22,9 +22,10 @@
 
     @if (desarrollador is null)
     {
-        <div class="bt-empty">
-            Cargando información del desarrollador...
-        </div>
+       <div class="bt-loading-card" role="status" aria-live="polite">
+    <div class="bt-spinner"></div>
+    <p>Cargando información del desarrollador...</p>
+    </div>
     }
     else
     {

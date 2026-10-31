@@ -70,6 +70,7 @@
                             <label class="bt-label">Fecha de inicio</label>
                             <InputDate TValue="DateOnly"
                                        class="form-control"
+                                       max="@FechaMaxima"
                                        @bind-Value="estado.Datos.FechaInicio" />
                             <ValidationMessage For="@(() => estado.Datos.FechaInicio)" />
                         </div>
@@ -202,4 +203,8 @@
             Contexto = new EditContext(datos);
         }
     }
+
+    private string FechaMaxima =>
+        DateTime.Today.ToString("yyyy-MM-dd");
+
 }

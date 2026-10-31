@@ -66,8 +66,15 @@
             <span>Certificaciones</span>
         </div>
 
-        <div class="bt-step-item @(pasoActual == 6 ? "is-active" : "")">
-            <div class="bt-step-circle">6</div>
+            <div class="bt-step-item @(pasoActual == 6 ? "is-active" : pasoActual > 6 ? "is-complete" : "")">
+                <div class="bt-step-circle">
+                    @(pasoActual > 6 ? "✓" : "6")
+                </div>
+                <span>Habilidades</span>
+            </div>
+
+        <div class="bt-step-item @(pasoActual == 7 ? "is-active" : "")">
+            <div class="bt-step-circle">7</div>
             <span>Revisión</span>
         </div>
 
@@ -75,7 +82,7 @@
 </div>
 
 <div class="bt-stepper-caption">
-    Paso @pasoActual de 6
+    Paso @pasoActual de 7
 </div>
 
 
@@ -115,6 +122,13 @@
     }
     else if (pasoActual == 6)
     {
+        <PasoHabilidades
+            Seleccionadas="registro.HabilidadesIds"
+            OnContinuar="AvanzarAsync"
+            OnVolver="RetrocederAsync" />
+    }
+    else if (pasoActual == 7)
+    {
        @if (guardando)
 {
     <div class="bt-loading-card" role="status" aria-live="polite">
@@ -152,7 +166,7 @@
 
     private Task AvanzarAsync()
     {
-        if (pasoActual < 6)
+        if (pasoActual < 7)
         {
             pasoActual++;
         }
@@ -221,5 +235,5 @@
     private int ProgresoPorcentaje =>
         pasoActual <= 1
             ? 0
-            : (int)Math.Round((pasoActual - 1) * 100.0 / 5);
+            : (int)Math.Round((pasoActual - 1) * 100.0 / 6);
 }

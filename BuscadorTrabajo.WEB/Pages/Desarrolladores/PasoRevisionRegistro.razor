@@ -1,11 +1,16 @@
 ﻿
+@inject IRepository repository
+
 <div class="bt-form-card">
     <div class="bt-form-section">
-        <h2 class="bt-form-section-title">Revisa tu registro</h2>
+        <h2 class="bt-form-section-title">
+        @(EsEdicion ? "Revisa los cambios" : "Revisa tu registro")
+        </h2>
 
         <p class="bt-subtitle">
-            Verifica que toda la información sea correcta antes
-            de crear tu perfil profesional en SkillNet.
+         @(EsEdicion
+        ? "Verifica los cambios realizados antes de actualizar el perfil profesional."
+        : "Verifica que toda la información sea correcta antes de crear tu perfil profesional en SkillNet.")
         </p>
     </div>
 
@@ -216,6 +221,46 @@
             }
         }
     </div>
+        @* Habilidades *@
+    <div class="bt-form-section">
+        <h3 class="bt-form-section-title">
+            6. Habilidades profesionales
+            <span class="bt-hint">
+                (@Registro.HabilidadesIds.Count)
+            </span>
+        </h3>
+
+        @if (cargandoHabilidades)
+        {
+            <p class="bt-hint">Cargando habilidades...</p>
+        }
+        else if (!string.IsNullOrWhiteSpace(errorHabilidades))
+        {
+            <p class="bt-hint">
+                No fue posible consultar los nombres de las habilidades.
+            </p>
+        }
+        else if (HabilidadesSeleccionadas.Count == 0)
+        {
+            <p class="bt-hint">
+                No se seleccionaron habilidades.
+            </p>
+        }
+        else
+        {
+            <div class="bt-form-grid">
+                @foreach (var habilidad in HabilidadesSeleccionadas)
+                {
+                    <div class="bt-field">
+                        <strong>@habilidad.Nombre</strong>
+                        <span class="bt-hint">
+                            @habilidad.Descripcion
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 
     <div class="bt-form-actions">
         <button type="button"
@@ -227,7 +272,7 @@
         <button type="button"
                 class="bt-btn bt-btn-primary"
                 @onclick="OnConfirmar">
-            Confirmar registro
+            @(EsEdicion ? "Guardar cambios" : "Confirmar registro")
         </button>
     </div>
 </div>
@@ -241,4 +286,46 @@
 
     [Parameter]
     public EventCallback OnConfirmar { get; set; }
+
+    [Parameter]
+    public bool EsEdicion { get; set; } = false;
+
+    private List<Habilidad> habilidadesDisponibles = new();
+
+private bool cargandoHabilidades = true;
+
+private string errorHabilidades;
+
+private List<Habilidad> HabilidadesSeleccionadas =>
+    habilidadesDisponibles
+        .Where(x => Registro.HabilidadesIds.Contains(x.Id))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var respuesta = await repository.GetAsync<List<Habilidad>>(
+                "/api/habilidades");
+
+            if (respuesta.Error)
+            {
+                errorHabilidades = await respuesta.GetErrorMessageAsync();
+                return;
+            }
+
+            habilidadesDisponibles =
+                respuesta.Response ?? new List<Habilidad>();
+        }
+        catch (Exception ex)
+        {
+            errorHabilidades = ex.Message;
+        }
+        finally
+        {
+            cargandoHabilidades = false;
+        }
+    }
+
+    
 }

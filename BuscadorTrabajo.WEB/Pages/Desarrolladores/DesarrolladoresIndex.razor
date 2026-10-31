@@ -1,0 +1,196 @@
+﻿
+@page "/desarrolladores"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<PageTitle>Desarrolladores | SkillNet</PageTitle>
+
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Desarrolladores</h1>
+            <p class="bt-subtitle">
+                Administra los profesionales registrados en SkillNet.
+            </p>
+        </div>
+
+        <a class="bt-btn bt-btn-primary"
+           href="/desarrolladores/registro">
+            + Nuevo desarrollador
+        </a>
+    </div>
+
+    <GenericList MyList="Desarrolladores">
+        <NoRecords>
+            <div class="bt-empty">
+                Todavía no hay desarrolladores registrados.
+                <br />
+                Cuando registres uno, aparecerá aquí.
+            </div>
+        </NoRecords>
+
+        <Body>
+            <div class="bt-grid">
+                @foreach (var desarrollador in Desarrolladores)
+                {
+                    <article class="bt-card">
+                        <div class="bt-card-head">
+                            <div class="bt-avatar">
+                                @Formato.Iniciales(
+                                    desarrollador.Nombre + " " +
+                                    desarrollador.Apellido)
+                            </div>
+
+                            <div class="bt-card-heading">
+                                <h3 class="bt-card-title">
+                                    @desarrollador.Nombre
+                                    @desarrollador.Apellido
+                                </h3>
+
+                                <span class="bt-card-meta">
+                                    C.C. @desarrollador.Cedula
+                                </span>
+                            </div>
+                        </div>
+
+                        <ul class="bt-info">
+                            <li>
+                                <span>Correo</span>
+                                @desarrollador.Correo
+                            </li>
+
+                            <li>
+                                <span>Celular</span>
+                                @desarrollador.Celular
+                            </li>
+
+                            <li>
+                                <span>Nacimiento</span>
+                                @desarrollador.FechaNacimiento.ToString("dd/MM/yyyy")
+                            </li>
+                        </ul>
+
+                        <div class="bt-card-foot">
+                            <a class="bt-btn bt-btn-ghost bt-btn-sm"
+                               href="/desarrolladores/detalle/@desarrollador.Id">
+                                Ver perfil
+                            </a>
+                            <a class="bt-btn bt-btn-ghost bt-btn-sm"
+                               href="/desarrolladores/edit/@desarrollador.Id">
+                                Editar
+                            </a>
+
+                            <button type="button"
+                                    class="bt-btn bt-btn-danger bt-btn-sm"
+                                    @onclick="() => DeleteAsync(desarrollador)">
+                                Eliminar
+                            </button>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <Pagination CurrentPage="currentPage"
+                        TotalPages="totalPages"
+                        TotalRecords="totalRecords"
+                        SelectedPage="SelectedPageAsync" />
+        </Body>
+    </GenericList>
+</div>
+
+@code {
+    private const int PageSize = 6;
+
+    private List<Desarrollador> Desarrolladores { get; set; }
+
+    private int currentPage = 1;
+    private int totalPages;
+    private int totalRecords;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync(1);
+    }
+
+    // GET /api/desarrolladores/paginated
+    private async Task LoadAsync(int page)
+    {
+        var responseHttp =
+            await repository.GetAsync<PaginatedResponse<Desarrollador>>(
+                $"/api/desarrolladores/paginated?page={page}&pageSize={PageSize}");
+
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+
+            await swal.FireAsync(
+                "Error",
+                mensajeError,
+                SweetAlertIcon.Error);
+
+            Desarrolladores = new List<Desarrollador>();
+            return;
+        }
+
+        var respuesta = responseHttp.Response;
+
+        // Si la página quedó vacía después de eliminar,
+        // regresar a la página anterior.
+        if (respuesta.Data.Count == 0 && respuesta.Page > 1)
+        {
+            await LoadAsync(respuesta.Page - 1);
+            return;
+        }
+
+        Desarrolladores = respuesta.Data;
+        currentPage = respuesta.Page;
+        totalPages = respuesta.TotalPages;
+        totalRecords = respuesta.TotalRecords;
+    }
+
+    private async Task SelectedPageAsync(int page)
+    {
+        await LoadAsync(page);
+    }
+
+    // DELETE /api/desarrolladores/{id}
+    private async Task DeleteAsync(Desarrollador desarrollador)
+    {
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmar eliminación",
+            Text = $"¿Seguro que deseas eliminar a {desarrollador.Nombre} {desarrollador.Apellido}?",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Sí, eliminar",
+            CancelButtonText = "Cancelar"
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync(
+            $"/api/desarrolladores/{desarrollador.Id}");
+
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+
+            await swal.FireAsync(
+                "No se pudo eliminar",
+                mensajeError,
+                SweetAlertIcon.Error);
+
+            return;
+        }
+
+        await swal.FireAsync(
+            "Eliminado",
+            "El desarrollador fue eliminado correctamente.",
+            SweetAlertIcon.Success);
+
+        await LoadAsync(currentPage);
+    }
+}

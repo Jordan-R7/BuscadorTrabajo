@@ -1,0 +1,540 @@
+﻿
+@page "/desarrolladores/detalle/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Detalle del desarrollador | SkillNet</PageTitle>
+
+<div class="bt-page">
+    <a class="bt-back" href="/desarrolladores">
+        ‹ Volver a desarrolladores
+    </a>
+
+    @if (cargando)
+    {
+        <div class="bt-empty">
+            Cargando información del desarrollador...
+        </div>
+    }
+    else if (desarrollador is not null)
+    {
+        <div class="bt-page-header">
+            <div>
+                <h1 class="bt-title">
+                    @desarrollador.Nombre @desarrollador.Apellido
+                </h1>
+
+                <p class="bt-subtitle">
+                    Perfil profesional del desarrollador
+                </p>
+            </div>
+
+            <a class="bt-btn bt-btn-primary"
+               href="/desarrolladores/edit/@desarrollador.Id">
+                Editar datos personales
+            </a>
+        </div>
+
+        @* DATOS PERSONALES *@
+        <div class="bt-form-card bt-form-section">
+           
+            <h2 class="bt-form-section-title">Información personal</h2>
+
+            <div class="bt-detail-grid">
+                <div class="bt-detail-item">
+                    <span class="bt-detail-label">Cédula</span>
+                    <strong class="bt-detail-value">@desarrollador.Cedula</strong>
+                </div>
+
+                <div class="bt-detail-item">
+                    <span class="bt-detail-label">Nombre completo</span>
+                    <strong class="bt-detail-value">
+                        @desarrollador.Nombre @desarrollador.Apellido
+                    </strong>
+                </div>
+
+                <div class="bt-detail-item">
+                    <span class="bt-detail-label">Celular</span>
+                    <strong class="bt-detail-value">@desarrollador.Celular</strong>
+                </div>
+
+                <div class="bt-detail-item">
+                    <span class="bt-detail-label">Correo electrónico</span>
+                    <strong class="bt-detail-value">@desarrollador.Correo</strong>
+                </div>
+
+                <div class="bt-detail-item">
+                    <span class="bt-detail-label">Fecha de nacimiento</span>
+                    <strong class="bt-detail-value">
+                        @desarrollador.FechaNacimiento.ToString("dd/MM/yyyy")
+                    </strong>
+                </div>
+
+                <div class="bt-detail-item">
+                    <span class="bt-detail-label">Identificador</span>
+                    <strong class="bt-detail-value">#@desarrollador.Id</strong>
+                </div>
+        </div>
+
+    </div>
+        
+
+        @if (perfil is null)
+        {
+            <div class="bt-empty">
+                Este desarrollador todavía no tiene un perfil profesional registrado.
+            </div>
+        }
+        else
+        {
+            @* PERFIL PROFESIONAL *@
+            <div class="bt-form-card bt-form-section">
+                
+                <h2 class="bt-form-section-title">Perfil profesional</h2>
+
+                <div class="bt-detail-grid">
+
+                    <div class="bt-detail-item bt-detail-item-full">
+                        <span class="bt-detail-label">Título profesional</span>
+                        <strong class="bt-detail-value">
+                            @perfil.TituloProfesional
+                        </strong>
+                    </div>
+
+                    <div class="bt-detail-item bt-detail-item-full">
+                        <span class="bt-detail-label">Descripción profesional</span>
+                        <p class="bt-detail-description">
+                            @perfil.Descripcion
+                        </p>
+                    </div>
+
+                    <div class="bt-detail-item">
+                        <span class="bt-detail-label">País</span>
+                        <strong class="bt-detail-value">@perfil.Pais</strong>
+                    </div>
+
+                    <div class="bt-detail-item">
+                        <span class="bt-detail-label">Ciudad</span>
+                        <strong class="bt-detail-value">@perfil.Ciudad</strong>
+                    </div>
+
+                    <div class="bt-detail-item">
+                        <span class="bt-detail-label">Modalidad</span>
+                        <strong class="bt-detail-value">@perfil.Modalidad</strong>
+                    </div>
+
+                    <div class="bt-detail-item">
+                        <span class="bt-detail-label">GitHub</span>
+
+                        @if (!string.IsNullOrWhiteSpace(perfil.GitHub))
+                        {
+                            <a class="bt-detail-link"
+                               href="@perfil.GitHub"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                Consultar GitHub ↗
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="bt-detail-value">No registrado</span>
+                        }
+                    </div>
+
+                    <div class="bt-detail-item">
+                        <span class="bt-detail-label">LinkedIn</span>
+
+                        @if (!string.IsNullOrWhiteSpace(perfil.LinkedIn))
+                        {
+                            <a class="bt-detail-link"
+                               href="@perfil.LinkedIn"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                Consultar LinkedIn ↗
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="bt-detail-value">No registrado</span>
+                        }
+                    </div>
+
+                </div>
+
+            </div>
+
+            @* HABILIDADES *@
+            <div class="bt-form-card bt-form-section">
+                <h2 class="bt-form-section-title">
+                    Habilidades
+                    <span class="bt-hint">(@habilidades.Count)</span>
+                </h2>
+
+                @if (habilidades.Count == 0)
+                {
+                    <p class="bt-hint">
+                        Este perfil todavía no tiene habilidades asignadas.
+                    </p>
+                }
+                else
+                {
+                    <div class="bt-pills">
+                        @foreach (var habilidad in habilidades)
+                        {
+                            <span class="bt-pill">
+                                @habilidad.Nombre
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
+
+            @* EDUCACIÓN *@
+            <div class="bt-form-card bt-form-section">
+                <h2 class="bt-form-section-title">
+                    Formación académica
+                    <span class="bt-hint">(@educaciones.Count)</span>
+                </h2>
+
+                @if (educaciones.Count == 0)
+                {
+                    <p class="bt-hint">No hay estudios registrados.</p>
+                }
+                else
+                {
+                    
+                    <div class="bt-record-list">
+                        @foreach (var educacion in educaciones)
+                        {
+                            <article class="bt-record-card">
+
+                                <span class="bt-record-status">
+                                    @(educacion.EnCurso ? "EN CURSO" : "FINALIZADO")
+                                </span>
+
+                                <strong class="bt-record-title">
+                                    @educacion.Titulo
+                                </strong>
+
+                                <p class="bt-record-subtitle">
+                                    @educacion.Institucion
+                                    ·
+                                    @educacion.NivelEducativo
+                                </p>
+
+                                <div class="bt-record-dates">
+                                    <div>
+                                        <span class="bt-record-date-label">
+                                            Fecha de inicio
+                                        </span>
+                                        <span class="bt-record-date-value">
+                                            @educacion.FechaInicio.ToString("dd/MM/yyyy")
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <span class="bt-record-date-label">
+                                            Fecha de finalización
+                                        </span>
+                                        <span class="bt-record-date-value">
+                                            @(educacion.EnCurso
+                                                ? "Actualmente"
+                                                : educacion.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha")
+                                        </span>
+                                    </div>
+                                </div>
+
+                            </article>
+                        }
+                    </div>
+
+                }
+            </div>
+
+            @* EXPERIENCIA *@
+            <div class="bt-form-card bt-form-section">
+                <h2 class="bt-form-section-title">
+                    Experiencia laboral
+                    <span class="bt-hint">(@experiencias.Count)</span>
+                </h2>
+
+                @if (experiencias.Count == 0)
+                {
+                    <p class="bt-hint">No hay experiencias registradas.</p>
+                }
+                else
+                {
+                    
+                    <div class="bt-record-list">
+                        @foreach (var experiencia in experiencias)
+                        {
+                            <article class="bt-record-card">
+
+                                <span class="bt-record-status">
+                                    @(experiencia.EstadoActual
+                                        ? "TRABAJO ACTUAL"
+                                        : "EXPERIENCIA ANTERIOR")
+                                </span>
+
+                                <strong class="bt-record-title">
+                                    @experiencia.Cargo
+                                </strong>
+
+                                <p class="bt-record-subtitle">
+                                    @experiencia.Empresa
+                                </p>
+
+                                @if (!string.IsNullOrWhiteSpace(experiencia.Descripcion))
+                                {
+                                    <p class="bt-detail-description"
+                                       style="margin-bottom: 14px;">
+                                        @experiencia.Descripcion
+                                    </p>
+                                }
+
+                                <div class="bt-record-dates">
+                                    <div>
+                                        <span class="bt-record-date-label">
+                                            Fecha de inicio
+                                        </span>
+                                        <span class="bt-record-date-value">
+                                            @experiencia.FechaInicio.ToString("dd/MM/yyyy")
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <span class="bt-record-date-label">
+                                            Fecha de finalización
+                                        </span>
+                                        <span class="bt-record-date-value">
+                                            @(experiencia.EstadoActual
+                                                ? "Actualmente"
+                                                : experiencia.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha")
+                                        </span>
+                                    </div>
+                                </div>
+
+                            </article>
+                        }
+                    </div>
+
+                }
+            </div>
+
+            @* CERTIFICACIONES *@
+            <div class="bt-form-card bt-form-section">
+                <h2 class="bt-form-section-title">
+                    Certificaciones
+                    <span class="bt-hint">(@certificaciones.Count)</span>
+                </h2>
+
+                @if (certificaciones.Count == 0)
+                {
+                    <p class="bt-hint">No hay certificaciones registradas.</p>
+                }
+                else
+                {
+                    
+                    <div class="bt-record-list">
+                        @foreach (var certificacion in certificaciones)
+                        {
+                            <article class="bt-record-card">
+
+                                <span class="bt-record-status">
+                                    CERTIFICACIÓN
+                                </span>
+
+                                <strong class="bt-record-title">
+                                    @certificacion.Titulo
+                                </strong>
+
+                                <p class="bt-record-subtitle">
+                                    @certificacion.Institucion
+                                </p>
+
+                                <div class="bt-record-dates">
+                                    <div>
+                                        <span class="bt-record-date-label">
+                                            Fecha de emisión
+                                        </span>
+                                        <span class="bt-record-date-value">
+                                            @certificacion.FechaEmision.ToString("dd/MM/yyyy")
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <span class="bt-record-date-label">
+                                            Vencimiento
+                                        </span>
+                                        <span class="bt-record-date-value">
+                                            @(certificacion.FechaVencimiento?.ToString("dd/MM/yyyy")
+                                                ?? "Sin vencimiento")
+                                        </span>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(certificacion.UrlCertificado))
+                                {
+                                    <div style="margin-top: 14px;">
+                                        <a class="bt-detail-link"
+                                           href="@certificacion.UrlCertificado"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            Consultar certificado ↗
+                                        </a>
+                                    </div>
+                                }
+
+                            </article>
+                        }
+                    </div>
+
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Desarrollador desarrollador;
+    private PerfilProfesional perfil;
+
+    private List<Educacion> educaciones = new();
+    private List<Experiencia> experiencias = new();
+    private List<Certificacion> certificaciones = new();
+    private List<Habilidad> habilidades = new();
+
+    private bool cargando = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        cargando = true;
+        desarrollador = null;
+        perfil = null;
+
+        try
+        {
+            // 1. Consultar los datos personales.
+            var respuestaDesarrollador =
+                await repository.GetAsync<Desarrollador>(
+                    $"/api/desarrolladores/{Id}");
+
+            if (respuestaDesarrollador.Error)
+            {
+                var mensaje = await respuestaDesarrollador.GetErrorMessageAsync();
+
+                await swal.FireAsync(
+                    "Error",
+                    mensaje,
+                    SweetAlertIcon.Error);
+
+                navigationManager.NavigateTo("/desarrolladores");
+                return;
+            }
+
+            desarrollador = respuestaDesarrollador.Response;
+
+            // 2. Encontrar el perfil profesional del desarrollador.
+            var respuestaPerfiles =
+                await repository.GetAsync<List<PerfilProfesional>>(
+                    "/api/perfilesprofesionales");
+
+            if (respuestaPerfiles.Error)
+            {
+                throw new Exception(
+                    await respuestaPerfiles.GetErrorMessageAsync());
+            }
+
+            perfil = respuestaPerfiles.Response?
+                .FirstOrDefault(p => p.IdDesarrollador == desarrollador.Id);
+
+            if (perfil is null)
+            {
+                return;
+            }
+
+            // 3. Consultar los registros relacionados.
+            var tareaEducaciones =
+                repository.GetAsync<List<Educacion>>("/api/educacion");
+
+            var tareaExperiencias =
+                repository.GetAsync<List<Experiencia>>("/api/experiencias");
+
+            var tareaCertificaciones =
+                repository.GetAsync<List<Certificacion>>("/api/certificaciones");
+
+            var tareaAsignaciones =
+                repository.GetAsync<List<Perfil_Habilidad>>(
+                    "/api/perfiles_habilidades");
+
+            var tareaHabilidades =
+                repository.GetAsync<List<Habilidad>>("/api/habilidades");
+
+            await Task.WhenAll(
+                tareaEducaciones,
+                tareaExperiencias,
+                tareaCertificaciones,
+                tareaAsignaciones,
+                tareaHabilidades);
+
+            var respuestaEducaciones = await tareaEducaciones;
+            var respuestaExperiencias = await tareaExperiencias;
+            var respuestaCertificaciones = await tareaCertificaciones;
+            var respuestaAsignaciones = await tareaAsignaciones;
+            var respuestaHabilidades = await tareaHabilidades;
+
+            // 4. Verificar que las consultas hayan sido exitosas.
+            if (respuestaEducaciones.Error ||
+                respuestaExperiencias.Error ||
+                respuestaCertificaciones.Error ||
+                respuestaAsignaciones.Error ||
+                respuestaHabilidades.Error)
+            {
+                throw new Exception(
+                    "No fue posible cargar toda la información relacionada.");
+            }
+
+            // 5. Filtrar los registros por el perfil profesional.
+            educaciones = respuestaEducaciones.Response
+                .Where(x => x.IdPerfilProfesional == perfil.Id)
+                .OrderByDescending(x => x.FechaInicio)
+                .ToList();
+
+            experiencias = respuestaExperiencias.Response
+                .Where(x => x.IdPerfilProfesional == perfil.Id)
+                .OrderByDescending(x => x.FechaInicio)
+                .ToList();
+
+            certificaciones = respuestaCertificaciones.Response
+                .Where(x => x.IdPerfilProfesional == perfil.Id)
+                .OrderByDescending(x => x.FechaEmision)
+                .ToList();
+
+            // 6. Resolver las habilidades asociadas al perfil.
+            var idsHabilidades = respuestaAsignaciones.Response
+                .Where(x => x.IdPerfilProfesional == perfil.Id)
+                .Select(x => x.IdHabilidad)
+                .ToHashSet();
+
+            habilidades = respuestaHabilidades.Response
+                .Where(x => idsHabilidades.Contains(x.Id))
+                .OrderBy(x => x.Nombre)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await swal.FireAsync(
+                "Error al cargar el perfil",
+                ex.Message,
+                SweetAlertIcon.Error);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+}

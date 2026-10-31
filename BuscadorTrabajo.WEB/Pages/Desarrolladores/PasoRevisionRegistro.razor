@@ -1,0 +1,244 @@
+﻿
+<div class="bt-form-card">
+    <div class="bt-form-section">
+        <h2 class="bt-form-section-title">Revisa tu registro</h2>
+
+        <p class="bt-subtitle">
+            Verifica que toda la información sea correcta antes
+            de crear tu perfil profesional en SkillNet.
+        </p>
+    </div>
+
+    @* Datos personales *@
+    <div class="bt-form-section">
+        <div class="bt-page-header">
+            <h3 class="bt-form-section-title">1. Datos personales</h3>
+        </div>
+
+        <div class="bt-form-grid">
+            <div class="bt-field">
+                <span class="bt-label">Cédula</span>
+                <strong>@Registro.DatosPersonales.Cedula</strong>
+            </div>
+
+            <div class="bt-field">
+                <span class="bt-label">Nombre completo</span>
+                <strong>
+                    @Registro.DatosPersonales.Nombre
+                    @Registro.DatosPersonales.Apellido
+                </strong>
+            </div>
+
+            <div class="bt-field">
+                <span class="bt-label">Celular</span>
+                <strong>@Registro.DatosPersonales.Celular</strong>
+            </div>
+
+            <div class="bt-field">
+                <span class="bt-label">Correo</span>
+                <strong>@Registro.DatosPersonales.Correo</strong>
+            </div>
+
+            <div class="bt-field bt-field-full">
+                <span class="bt-label">Fecha de nacimiento</span>
+                <strong>
+                    @Registro.DatosPersonales.FechaNacimiento.ToString("dd/MM/yyyy")
+                </strong>
+            </div>
+        </div>
+    </div>
+
+    @* Perfil profesional *@
+    <div class="bt-form-section">
+        <h3 class="bt-form-section-title">2. Perfil profesional</h3>
+
+        <div class="bt-form-grid">
+            <div class="bt-field bt-field-full">
+                <span class="bt-label">Título profesional</span>
+                <strong>@Registro.PerfilProfesional.TituloProfesional</strong>
+            </div>
+
+            <div class="bt-field bt-field-full">
+                <span class="bt-label">Descripción</span>
+                <p>@Registro.PerfilProfesional.Descripcion</p>
+            </div>
+
+            <div class="bt-field">
+                <span class="bt-label">País</span>
+                <strong>@Registro.PerfilProfesional.Pais</strong>
+            </div>
+
+            <div class="bt-field">
+                <span class="bt-label">Ciudad</span>
+                <strong>@Registro.PerfilProfesional.Ciudad</strong>
+            </div>
+
+            <div class="bt-field">
+                <span class="bt-label">Modalidad</span>
+                <strong>@Registro.PerfilProfesional.Modalidad</strong>
+            </div>
+
+            <div class="bt-field">
+                <span class="bt-label">GitHub</span>
+                @if (!string.IsNullOrWhiteSpace(Registro.PerfilProfesional.GitHub))
+                {
+                    <a href="@Registro.PerfilProfesional.GitHub"
+                       target="_blank" rel="noopener noreferrer">
+                        Consultar perfil
+                    </a>
+                }
+                else
+                {
+                    <span>No registrado</span>
+                }
+            </div>
+
+            <div class="bt-field">
+                <span class="bt-label">LinkedIn</span>
+                @if (!string.IsNullOrWhiteSpace(Registro.PerfilProfesional.LinkedIn))
+                {
+                    <a href="@Registro.PerfilProfesional.LinkedIn"
+                       target="_blank" rel="noopener noreferrer">
+                        Consultar perfil
+                    </a>
+                }
+                else
+                {
+                    <span>No registrado</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* Educación *@
+    <div class="bt-form-section">
+        <h3 class="bt-form-section-title">
+            3. Formación académica
+            <span class="bt-hint">(@Registro.Educaciones.Count)</span>
+        </h3>
+
+        @if (Registro.Educaciones.Count == 0)
+        {
+            <p class="bt-hint">No se registró formación académica.</p>
+        }
+        else
+        {
+            @foreach (var educacion in Registro.Educaciones)
+            {
+                <div class="bt-form-section">
+                    <strong>@educacion.Titulo</strong>
+                    <p>@educacion.NivelEducativo · @educacion.Institucion</p>
+                    <span class="bt-hint">
+                        @educacion.FechaInicio.ToString("dd/MM/yyyy")
+                        —
+                        @(educacion.EnCurso
+                            ? "En curso"
+                            : educacion.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha de finalización")
+                    </span>
+                </div>
+            }
+        }
+    </div>
+
+    @* Experiencia *@
+    <div class="bt-form-section">
+        <h3 class="bt-form-section-title">
+            4. Experiencia laboral
+            <span class="bt-hint">(@Registro.Experiencias.Count)</span>
+        </h3>
+
+        @if (Registro.Experiencias.Count == 0)
+        {
+            <p class="bt-hint">No se registró experiencia laboral.</p>
+        }
+        else
+        {
+            @foreach (var experiencia in Registro.Experiencias)
+            {
+                <div class="bt-form-section">
+                    <strong>@experiencia.Cargo</strong>
+                    <p>@experiencia.Empresa</p>
+
+                    @if (!string.IsNullOrWhiteSpace(experiencia.Descripcion))
+                    {
+                        <p>@experiencia.Descripcion</p>
+                    }
+
+                    <span class="bt-hint">
+                        @experiencia.FechaInicio.ToString("dd/MM/yyyy")
+                        —
+                        @(experiencia.EstadoActual
+                            ? "Actualmente"
+                            : experiencia.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha de finalización")
+                    </span>
+                </div>
+            }
+        }
+    </div>
+
+    @* Certificaciones *@
+    <div class="bt-form-section">
+        <h3 class="bt-form-section-title">
+            5. Certificaciones
+            <span class="bt-hint">(@Registro.Certificaciones.Count)</span>
+        </h3>
+
+        @if (Registro.Certificaciones.Count == 0)
+        {
+            <p class="bt-hint">No se registraron certificaciones.</p>
+        }
+        else
+        {
+            @foreach (var certificacion in Registro.Certificaciones)
+            {
+                <div class="bt-form-section">
+                    <strong>@certificacion.Titulo</strong>
+                    <p>@certificacion.Institucion</p>
+
+                    <span class="bt-hint">
+                        Emisión:
+                        @certificacion.FechaEmision.ToString("dd/MM/yyyy")
+                    </span>
+
+                    <span class="bt-hint">
+                        Vencimiento:
+                        @(certificacion.FechaVencimiento?.ToString("dd/MM/yyyy") ?? "Sin vencimiento")
+                    </span>
+
+                    @if (!string.IsNullOrWhiteSpace(certificacion.UrlCertificado))
+                    {
+                        <a href="@certificacion.UrlCertificado"
+                           target="_blank" rel="noopener noreferrer">
+                            Consultar certificado
+                        </a>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    <div class="bt-form-actions">
+        <button type="button"
+                class="bt-btn bt-btn-ghost"
+                @onclick="OnVolver">
+            ← Volver
+        </button>
+
+        <button type="button"
+                class="bt-btn bt-btn-primary"
+                @onclick="OnConfirmar">
+            Confirmar registro
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RegistroDesarrolladorDTO Registro { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnVolver { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirmar { get; set; }
+}

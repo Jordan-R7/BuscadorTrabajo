@@ -1,0 +1,200 @@
+﻿
+<div class="bt-form-card">
+    <div class="bt-form-section">
+        <h2 class="bt-form-section-title">Experiencia laboral</h2>
+
+        <p class="bt-subtitle">
+            Cuéntanos dónde has trabajado, qué cargos has desempeñado
+            y qué responsabilidades has tenido.
+        </p>
+
+        @if (estados.Count == 0)
+        {
+            <div class="bt-hint">
+                Todavía no has agregado experiencia laboral.
+                Puedes continuar sin registrar ninguna.
+            </div>
+        }
+
+        @foreach (var estado in estados)
+        {
+            <div class="bt-form-section">
+                <div class="bt-page-header">
+                    <h3 class="bt-form-section-title">
+                        Experiencia @(estados.IndexOf(estado) + 1)
+                    </h3>
+
+                    <button type="button"
+                            class="bt-btn bt-btn-ghost"
+                            @onclick="() => EliminarExperiencia(estado)">
+                        Eliminar
+                    </button>
+                </div>
+
+                <EditForm EditContext="estado.Contexto">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="bt-form-grid">
+                        <div class="bt-field">
+                            <label class="bt-label">Empresa</label>
+                            <InputText class="form-control"
+                                       @bind-Value="estado.Datos.Empresa"
+                                       placeholder="Nombre de la empresa" />
+                            <ValidationMessage For="@(() => estado.Datos.Empresa)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Cargo</label>
+                            <InputText class="form-control"
+                                       @bind-Value="estado.Datos.Cargo"
+                                       placeholder="Ej. Desarrollador Junior" />
+                            <ValidationMessage For="@(() => estado.Datos.Cargo)" />
+                        </div>
+
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Descripción de funciones</label>
+                            <InputTextArea class="form-control"
+                                           @bind-Value="estado.Datos.Descripcion"
+                                           rows="3"
+                                           maxlength="250"
+                                           placeholder="Describe brevemente tus responsabilidades y logros..." />
+                            <ValidationMessage For="@(() => estado.Datos.Descripcion)" />
+                            <span class="bt-hint">Máximo 250 caracteres.</span>
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Fecha de inicio</label>
+                            <InputDate TValue="DateOnly"
+                                       class="form-control"
+                                       @bind-Value="estado.Datos.FechaInicio" />
+                            <ValidationMessage For="@(() => estado.Datos.FechaInicio)" />
+                        </div>
+
+                        <div class="bt-field">
+                            <label class="bt-label">Fecha de finalización</label>
+                            <InputDate TValue="DateOnly?"
+                                       class="form-control"
+                                       @bind-Value="estado.Datos.FechaFin"
+                                       disabled="@estado.Datos.EstadoActual" />
+                            <ValidationMessage For="@(() => estado.Datos.FechaFin)" />
+                        </div>
+
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">
+                                <InputCheckbox class="form-check-input"
+                                               @bind-Value="estado.Datos.EstadoActual"
+                                               @bind-Value:after="() => CambioEstadoActual(estado)" />
+                                Actualmente trabajo en esta empresa
+                            </label>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        }
+
+        <div class="bt-form-actions">
+            <button type="button"
+                    class="bt-btn bt-btn-ghost"
+                    @onclick="AgregarExperiencia">
+                + Agregar experiencia
+            </button>
+        </div>
+    </div>
+
+    <div class="bt-form-actions">
+        <button type="button"
+                class="bt-btn bt-btn-ghost"
+                @onclick="OnVolver">
+            ← Atrás
+        </button>
+
+        <button type="button"
+                class="bt-btn bt-btn-primary"
+                @onclick="ContinuarAsync">
+            Continuar →
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<ExperienciaRegistroDTO> Datos { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnContinuar { get; set; }
+
+    [Parameter]
+    public EventCallback OnVolver { get; set; }
+
+    private List<ExperienciaState> estados = new();
+
+    protected override void OnParametersSet()
+    {
+        foreach (var experiencia in Datos)
+        {
+            if (!estados.Any(x => ReferenceEquals(x.Datos, experiencia)))
+            {
+                estados.Add(new ExperienciaState(experiencia));
+            }
+        }
+
+        estados.RemoveAll(x => !Datos.Any(
+            d => ReferenceEquals(d, x.Datos)));
+    }
+
+    private void AgregarExperiencia()
+    {
+        var nueva = new ExperienciaRegistroDTO
+        {
+            FechaInicio = DateOnly.FromDateTime(DateTime.Today)
+        };
+
+        Datos.Add(nueva);
+        estados.Add(new ExperienciaState(nueva));
+    }
+
+    private void EliminarExperiencia(ExperienciaState estado)
+    {
+        Datos.Remove(estado.Datos);
+        estados.Remove(estado);
+    }
+
+    private void CambioEstadoActual(ExperienciaState estado)
+    {
+        if (estado.Datos.EstadoActual)
+        {
+            estado.Datos.FechaFin = null;
+        }
+    }
+
+    private async Task ContinuarAsync()
+    {
+        var valido = true;
+
+        foreach (var estado in estados)
+        {
+            if (!estado.Contexto.Validate())
+            {
+                valido = false;
+            }
+        }
+
+        if (valido)
+        {
+            await OnContinuar.InvokeAsync();
+        }
+    }
+
+    private sealed class ExperienciaState
+    {
+        public ExperienciaRegistroDTO Datos { get; }
+        public EditContext Contexto { get; }
+
+        public ExperienciaState(ExperienciaRegistroDTO datos)
+        {
+            Datos = datos;
+            Contexto = new EditContext(datos);
+        }
+    }
+}

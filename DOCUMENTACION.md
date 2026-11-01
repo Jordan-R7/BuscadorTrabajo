@@ -35,7 +35,7 @@ Este documento recoge **todo** lo que se ha hecho en el proyecto: las decisiones
 | Asignatura | Programación de Software |
 | Entrega | Práctica 3: WebAPI + base de datos + Blazor WebAssembly |
 | Equipo | Error404 |
-| Integrantes | Jordan del Aguila, Brayan Florez, Juan David Mosquera, Joan Manuel Londoño, Samuel Maya |
+| Integrantes | Jordan del Aguila, Brayan Florez |
 | Proyecto | Buscador de trabajo orientado al área de sistemas |
 | Nombre visible de la aplicación | **SkillNet** ("Conecta. Desarrolla. Crece.") |
 | Repositorio | `BuscadorTrabajo` en GitHub (`Jordan-R7/BuscadorTrabajo`), con el profesor (`orlapez`) invitado |
@@ -695,19 +695,6 @@ Un compañero pasó una auditoría del API y se corrigió:
 5. **Archivos compartidos** (`index.html`, `NavMenu.razor`, `Home.razor`, `modulos.css`, `_Imports.razor`): avisar antes de tocarlos, para evitar conflictos.
 6. Nunca cambiar de rama con cambios sin guardar: primero commit o descartar.
 
-**Commits principales de la rama Brayan:**
-
-| Commit | Contenido |
-|---|---|
-| creacion de administrador | Entidad `Administrador` |
-| DataContext, relaciones y migracion inicial | `DataContext` con Fluent API, índices y migración `Inicial` |
-| Creacion SeedDB, 10 registros por la mayoria de entidades | `SeedDb` |
-| Frontend base y modulo de Categorias | Repository, `GenericList`, SweetAlert, CRUD de Categorías |
-| Validaciones, manejo de errores y paginacion en el API | `ErroresBaseDatos`, 409, paginación e `IValidatableObject` |
-| Reglas de publicaciones y aplicaciones | Transiciones y reglas RN19 a RN31 |
-| Front: Inicio, Publicaciones, Empresas, Clientes, Habilidades, Categorias y tablas de habilidades | Diseño de los módulos y las dos tablas N:M |
-
----
 
 ## 18. Aportes por integrante
 
@@ -715,22 +702,10 @@ Un compañero pasó una auditoría del API y se corrigió:
 |---|---|
 | **Brayan Florez** | Estructura de la solución. Entidad Administrador. DataContext con relaciones, índices y comportamiento al borrar. Migración inicial. SeedDb con datos de todas las entidades. Controladores con paginación, validaciones y manejo de errores. Reglas de publicaciones y aplicaciones. Front: Inicio, Publicaciones, Aplicaciones, Empresas, Clientes, Habilidades, Categorías, Administradores, las dos tablas N:M y el menú. Eliminación y desactivación de desarrolladores. Atributo `UrlOpcional`. Pruebas del API (115 casos). |
 | **Jordan del Aguila** | Repositorio en GitHub e integración de los Pull Requests. Corrección de la cultura en `Range` (decimales). Módulo de Desarrolladores: registro por pasos, detalle, edición del perfil completo y endpoints transaccionales. _Confirmar:_ diseño base SkillNet (layout, menú, paleta), auditoría del API y plan de eliminación de desarrolladores. |
-| **Juan David Mosquera** | _Completar_ |
-| **Joan Manuel Londoño** | _Completar_ |
-| **Samuel Maya** | _Completar_ |
-
-> Cada integrante debe revisar y completar su fila. En el video cada uno explica su parte.
 
 ---
 
 ## 19. Pendientes y trabajo futuro
-
-**Para esta entrega:**
-- [x] Aplicar la migración `AgregarEstadoActivoDesarrollador` y hacer las pruebas de la sección 14 (ronda 4: 30 casos, todos bien).
-- [ ] Completar el `README.md` del repositorio: integrantes, cómo ejecutar, SeedDb, administrador, endpoints, enlace al video y aportes.
-- [ ] Evidencia de pruebas en **Postman** (colección exportada o capturas).
-- [ ] Grabar el **video** (máximo 5 minutos, con todos los integrantes).
-- [ ] Completar los aportes de cada integrante.
 
 **Fuera del alcance (etapas siguientes):**
 - Login, contraseñas y roles, con las reglas RF01 a RF05.

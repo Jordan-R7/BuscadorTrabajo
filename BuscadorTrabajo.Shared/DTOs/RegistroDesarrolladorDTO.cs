@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using BuscadorTrabajo.Shared.Validaciones;
 using System.Text;
 
 namespace BuscadorTrabajo.Shared.DTOs
@@ -96,11 +97,11 @@ namespace BuscadorTrabajo.Shared.DTOs
         public string Modalidad { get; set; }
 
         [MaxLength(300)]
-        [Url(ErrorMessage = "El enlace de GitHub no es válido.")]
+        [UrlOpcional(ErrorMessage = "El enlace de GitHub no es válido.")]
         public string GitHub { get; set; }
 
         [MaxLength(300)]
-        [Url(ErrorMessage = "El enlace de LinkedIn no es válido.")]
+        [UrlOpcional(ErrorMessage = "El enlace de LinkedIn no es válido.")]
         public string LinkedIn { get; set; }
     }
 
@@ -228,7 +229,7 @@ namespace BuscadorTrabajo.Shared.DTOs
         public DateOnly? FechaVencimiento { get; set; }
 
         [MaxLength(300)]
-        [Url(ErrorMessage = "El enlace del certificado no es válido.")]
+        [UrlOpcional(ErrorMessage = "El enlace del certificado no es válido.")]
         public string UrlCertificado { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

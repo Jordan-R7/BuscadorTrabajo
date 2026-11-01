@@ -42,6 +42,10 @@ namespace BuscadorTrabajo.WEB.Repositories
             {
                 return ExtraerMensaje(contenido, "La operación entra en conflicto con otro registro.");
             }
+            else if (codigoEstatus == HttpStatusCode.ServiceUnavailable)
+            {
+                return ExtraerMensaje(contenido, "No se pudo conectar con el servidor.");
+            }
             else if (codigoEstatus == HttpStatusCode.Unauthorized)
             {
                 return "Debes iniciar sesión para realizar esta acción.";
@@ -51,7 +55,39 @@ namespace BuscadorTrabajo.WEB.Repositories
                 return "No tienes permisos para realizar esta acción.";
             }
 
-            return "Ha ocurrido un error inesperado.";
+            return "Ha ocurrido un error inesperado en el servidor. Inténtalo de nuevo.";
+        }
+
+        // Algunas respuestas del API traen un código para que la página sepa qué hacer,
+        // por ejemplo { "codigo": "REQUIERE_CONFIRMACION_HISTORIAL", "mensaje": "..." }.
+        // Devuelve ese código, o null si la respuesta no lo trae.
+        public async Task<string> GetCodigoErrorAsync()
+        {
+            if (!Error)
+            {
+                return null;
+            }
+
+            var contenido = await HttpResponseMessage.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(contenido) || !contenido.TrimStart().StartsWith("{"))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var documento = JsonDocument.Parse(contenido);
+                if (documento.RootElement.TryGetProperty("codigo", out var codigo)
+                    && codigo.ValueKind == JsonValueKind.String)
+                {
+                    return codigo.GetString();
+                }
+            }
+            catch (JsonException)
+            {
+            }
+
+            return null;
         }
 
         // El API responde un texto simple (por ejemplo "Ya existe una categoría con ese nombre.")
@@ -72,6 +108,14 @@ namespace BuscadorTrabajo.WEB.Repositories
             try
             {
                 using var documento = JsonDocument.Parse(contenido);
+
+                // Respuesta con código y mensaje: { "codigo": "...", "mensaje": "..." }
+                if (documento.RootElement.TryGetProperty("mensaje", out var mensajeApi)
+                    && mensajeApi.ValueKind == JsonValueKind.String)
+                {
+                    return mensajeApi.GetString();
+                }
+
                 if (documento.RootElement.TryGetProperty("errors", out var errores)
                     && errores.ValueKind == JsonValueKind.Object)
                 {

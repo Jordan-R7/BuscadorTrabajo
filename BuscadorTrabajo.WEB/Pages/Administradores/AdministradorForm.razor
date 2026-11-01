@@ -1,0 +1,106 @@
+﻿@inject SweetAlertService swal
+
+@* Formulario reutilizable: lo usan tanto "Crear" como "Editar". *@
+
+<NavigationLock OnBeforeInternalNavigation="OnBeforeInternalNavigation"></NavigationLock>
+
+<div class="bt-form-card">
+    <EditForm EditContext="editContext" OnValidSubmit="OnSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Datos personales</h2>
+            <div class="bt-form-grid">
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Cédula</label>
+                    <InputText class="form-control" @bind-Value="Administrador.Cedula" placeholder="Solo números, entre 6 y 10 dígitos" />
+                    <ValidationMessage For="@(() => Administrador.Cedula)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Nombre</label>
+                    <InputText class="form-control" @bind-Value="Administrador.Nombre" />
+                    <ValidationMessage For="@(() => Administrador.Nombre)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Apellido</label>
+                    <InputText class="form-control" @bind-Value="Administrador.Apellido" />
+                    <ValidationMessage For="@(() => Administrador.Apellido)" />
+                </div>
+            </div>
+        </div>
+
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Contacto</h2>
+            <div class="bt-form-grid">
+                <div class="bt-field">
+                    <label class="bt-label">Celular</label>
+                    <InputText class="form-control" @bind-Value="Administrador.Celular" placeholder="Ej: 3001234567" />
+                    <ValidationMessage For="@(() => Administrador.Celular)" />
+                </div>
+
+                <div class="bt-field">
+                    <label class="bt-label">Correo</label>
+                    <InputText class="form-control" @bind-Value="Administrador.Correo" placeholder="nombre@correo.com" />
+                    <ValidationMessage For="@(() => Administrador.Correo)" />
+                </div>
+            </div>
+        </div>
+
+        <div class="bt-form-actions">
+            <button class="bt-btn bt-btn-ghost" type="button" @onclick="ReturnAction">Regresar</button>
+            <button class="bt-btn bt-btn-primary" type="submit">Guardar</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private EditContext editContext = null!;
+
+    [EditorRequired]
+    [Parameter]
+    public Administrador Administrador { get; set; }
+
+    [EditorRequired]
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    [EditorRequired]
+    [Parameter]
+    public EventCallback ReturnAction { get; set; }
+
+    public bool FormPostedSuccessfully { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(Administrador);
+    }
+
+    // Si el usuario cambió algo y quiere salir sin guardar, le pide confirmación
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        var formWasEdited = editContext.IsModified();
+        if (!formWasEdited || FormPostedSuccessfully)
+        {
+            return;
+        }
+
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "¿Deseas abandonar la página y perder los cambios?",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true
+        });
+
+        var confirm = !string.IsNullOrEmpty(result.Value);
+        if (confirm)
+        {
+            return;
+        }
+
+        context.PreventNavigation();
+    }
+}

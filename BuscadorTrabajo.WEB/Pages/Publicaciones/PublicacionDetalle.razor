@@ -91,8 +91,13 @@
             </div>
 
             <div class="bt-card-foot">
+                @if (publicacion.Estado == "PUBLICADA")
+                {
+                    <a class="bt-btn bt-btn-primary" href="/aplicaciones/create?publicacion=@publicacion.Id">Aplicar</a>
+                }
+                <a class="bt-btn bt-btn-soft" href="/aplicaciones?publicacion=@publicacion.Id">Ver aplicaciones</a>
                 <button class="bt-btn bt-btn-danger" @onclick="DeleteAsync">Borrar</button>
-                <a class="bt-btn bt-btn-primary" href="/publicaciones/edit/@publicacion.Id">Editar publicación</a>
+                <a class="bt-btn bt-btn-ghost" href="/publicaciones/edit/@publicacion.Id">Editar publicación</a>
             </div>
         </article>
     }

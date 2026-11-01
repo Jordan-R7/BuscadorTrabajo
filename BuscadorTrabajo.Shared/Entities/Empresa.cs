@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using BuscadorTrabajo.Shared.Validaciones;
 
 namespace BuscadorTrabajo.Shared.Entities
 {
@@ -52,7 +53,7 @@ namespace BuscadorTrabajo.Shared.Entities
 
         [Display(Name = "Sitio Web")]
         [MaxLength(300, ErrorMessage = "El Sitio Web no puede tener más de 300 caracteres")]
-        [Url(ErrorMessage = "El sitio web debe ser una URL válida")]
+        [UrlOpcional(ErrorMessage = "El sitio web debe ser una URL válida")]
         public string SitioWeb { get; set; }
 
         

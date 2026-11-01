@@ -41,6 +41,11 @@ namespace BuscadorTrabajo.Shared.Entities
         [DataType(DataType.Date, ErrorMessage = "El campo {0} debe ser una fecha válida")]
         public DateOnly FechaNacimiento { get; set; }
 
+        // true = activo. false = desactivado por un administrador:
+        // se conserva para no perder el historial de sus aplicaciones.
+        [Display(Name = "Activo")]
+        public bool Activo { get; set; } = true;
+
         // Reglas que comparan varios campos
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

@@ -39,22 +39,16 @@
                     <span>▤</span> Publicaciones
                 </NavLink>
 
-                <NavLink href="/mi-perfil"
+                <NavLink href="/aplicaciones"
                          class="menu-link"
                          @onclick="CloseMenu">
-                    <span>♙</span> Mi perfil profesional
+                    <span>➤</span> Aplicaciones
                 </NavLink>
 
-                <NavLink href="/mis-aplicaciones"
+                <NavLink href="/desarrolladores/registro"
                          class="menu-link"
                          @onclick="CloseMenu">
-                    <span>➤</span> Mis aplicaciones
-                </NavLink>
-
-                <NavLink href="/mis-publicaciones"
-                         class="menu-link"
-                         @onclick="CloseMenu">
-                    <span>▣</span> Mis publicaciones
+                    <span>♙</span> Registrarme como desarrollador
                 </NavLink>
 
                 <div class="menu-divider"></div>
@@ -63,24 +57,28 @@
                     Administración
                 </span>
 
-                <NavLink href="/categorias" class="menu-link">
+                <NavLink href="/categorias" class="menu-link" @onclick="CloseMenu">
                     Categorías
                 </NavLink>
 
-                <NavLink href="/habilidades" class="menu-link">
+                <NavLink href="/habilidades" class="menu-link" @onclick="CloseMenu">
                     Habilidades
                 </NavLink>
 
-                <NavLink href="/empresas" class="menu-link">
+                <NavLink href="/empresas" class="menu-link" @onclick="CloseMenu">
                     Empresas
                 </NavLink>
 
-                <NavLink href="/clientes" class="menu-link">
+                <NavLink href="/clientes" class="menu-link" @onclick="CloseMenu">
                     Clientes
                 </NavLink>
 
-                <NavLink href="/desarrolladores" class="menu-link">
+                <NavLink href="/desarrolladores" Match="NavLinkMatch.All" class="menu-link" @onclick="CloseMenu">
                     Desarrolladores
+                </NavLink>
+
+                <NavLink href="/administradores" class="menu-link" @onclick="CloseMenu">
+                    Administradores
                 </NavLink>
 
             </nav>

@@ -1,0 +1,272 @@
+﻿@inject IRepository repository
+@inject SweetAlertService swal
+
+@* Formulario reutilizable: lo usan tanto "Crear" como "Editar".
+   Al crear se elige la publicación y el desarrollador; al editar solo cambian el mensaje,
+   la propuesta y el estado (siguiendo las transiciones permitidas, RN31). *@
+
+<NavigationLock OnBeforeInternalNavigation="OnBeforeInternalNavigation"></NavigationLock>
+
+<div class="bt-form-card">
+    <EditForm EditContext="editContext" OnValidSubmit="EnviarAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @* ---------- Publicación y desarrollador ---------- *@
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">¿Quién aplica y a qué?</h2>
+            <div class="bt-form-grid">
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Publicación</label>
+                    @if (EsEdicion)
+                    {
+                        <div class="bt-readonly">@(PublicacionSeleccionada?.Titulo ?? "Publicación")</div>
+                    }
+                    else
+                    {
+                        <InputSelect class="form-select" @bind-Value="Aplicacion.IdPublicacion" @bind-Value:after="AlCambiarPublicacion">
+                            <option value="0">Selecciona una publicación activa</option>
+                            @foreach (var publicacion in PublicacionesDisponibles())
+                            {
+                                <option value="@publicacion.Id">@publicacion.Titulo (@Formato.Texto(publicacion.Tipo))</option>
+                            }
+                        </InputSelect>
+                        <span class="bt-hint">Solo aparecen las publicaciones en estado Publicada y sin vencer.</span>
+                    }
+                    <ValidationMessage For="@(() => Aplicacion.IdPublicacion)" />
+                </div>
+
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Desarrollador</label>
+                    @if (EsEdicion)
+                    {
+                        <div class="bt-readonly">@NombreDesarrollador(Aplicacion.IdDesarrollador)</div>
+                    }
+                    else
+                    {
+                        <InputSelect class="form-select" @bind-Value="Aplicacion.IdDesarrollador">
+                            <option value="0">Selecciona un desarrollador</option>
+                            @foreach (var desarrollador in DesarrolladoresConPerfil())
+                            {
+                                <option value="@desarrollador.Id">@desarrollador.Nombre @desarrollador.Apellido (C.C. @desarrollador.Cedula)</option>
+                            }
+                        </InputSelect>
+                        <span class="bt-hint">Solo aparecen los desarrolladores activos que tienen perfil profesional.</span>
+                    }
+                    <ValidationMessage For="@(() => Aplicacion.IdDesarrollador)" />
+                </div>
+            </div>
+        </div>
+
+        @* ---------- Propuesta ---------- *@
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Propuesta</h2>
+            <div class="bt-form-grid">
+                <div class="bt-field bt-field-full">
+                    <label class="bt-label">Mensaje (opcional)</label>
+                    <InputTextArea class="form-control" rows="3" @bind-Value="Aplicacion.Mensaje" placeholder="Cuéntale a la empresa o al cliente por qué eres buena opción" />
+                    <ValidationMessage For="@(() => Aplicacion.Mensaje)" />
+                </div>
+
+                @if (EsServicio)
+                {
+                    <div class="bt-field">
+                        <label class="bt-label">Monto propuesto (@(PublicacionSeleccionada?.Moneda ?? "COP"))</label>
+                        <InputNumber class="form-control" @bind-Value="Aplicacion.MontoPropuesto" placeholder="Ej: 2000000" />
+                        <ValidationMessage For="@(() => Aplicacion.MontoPropuesto)" />
+                    </div>
+
+                    <div class="bt-field">
+                        <label class="bt-label">Plazo estimado (días)</label>
+                        <InputNumber class="form-control" @bind-Value="Aplicacion.PlazoEstimado" placeholder="Ej: 30" />
+                        <ValidationMessage For="@(() => Aplicacion.PlazoEstimado)" />
+                    </div>
+                    <p class="bt-hint bt-field-full">En una solicitud de servicio el monto y el plazo son obligatorios.</p>
+                }
+                else if (PublicacionSeleccionada != null)
+                {
+                    <p class="bt-hint bt-field-full">Las aplicaciones a ofertas de empleo no llevan monto ni plazo.</p>
+                }
+            </div>
+        </div>
+
+        @* ---------- Estado (solo al editar) ---------- *@
+        @if (EsEdicion)
+        {
+            <div class="bt-form-section">
+                <h2 class="bt-form-section-title">Estado</h2>
+                <div class="bt-form-grid">
+                    <div class="bt-field">
+                        <label class="bt-label">Estado de la aplicación</label>
+                        <InputSelect class="form-select" @bind-Value="Aplicacion.Estado">
+                            @foreach (var estado in EstadosDisponibles())
+                            {
+                                <option value="@estado">@Formato.Texto(estado)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => Aplicacion.Estado)" />
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="bt-form-actions">
+            <button class="bt-btn bt-btn-ghost" type="button" @onclick="ReturnAction">Regresar</button>
+            <button class="bt-btn bt-btn-primary" type="submit">@(EsEdicion ? "Guardar cambios" : "Enviar aplicación")</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private EditContext editContext = null!;
+
+    private List<Publicacion> publicaciones = new();
+    private List<Desarrollador> desarrolladores = new();
+    private HashSet<int> desarrolladoresConPerfil = new();
+
+    // Estados a los que puede pasar una aplicación desde cada estado (RN31)
+    private static readonly Dictionary<string, string[]> transiciones = new()
+    {
+        ["PENDIENTE"] = new[] { "EN_REVISION", "RECHAZADA", "RETIRADA" },
+        ["EN_REVISION"] = new[] { "ACEPTADA", "RECHAZADA", "RETIRADA" },
+        ["ACEPTADA"] = new string[0],
+        ["RECHAZADA"] = new string[0],
+        ["RETIRADA"] = new string[0]
+    };
+
+    [EditorRequired]
+    [Parameter]
+    public Aplicacion Aplicacion { get; set; }
+
+    // Estado que tenía la aplicación al abrir "Editar". En "Crear" va vacío.
+    [Parameter]
+    public string EstadoOriginal { get; set; }
+
+    [EditorRequired]
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    [EditorRequired]
+    [Parameter]
+    public EventCallback ReturnAction { get; set; }
+
+    public bool FormPostedSuccessfully { get; set; } = false;
+
+    private bool EsEdicion => !string.IsNullOrEmpty(EstadoOriginal);
+
+    private Publicacion PublicacionSeleccionada => publicaciones.FirstOrDefault(p => p.Id == Aplicacion.IdPublicacion);
+
+    private bool EsServicio => PublicacionSeleccionada?.Tipo == "SERVICIO";
+
+    protected override void OnInitialized()
+    {
+        editContext = new(Aplicacion);
+    }
+
+    // Carga las listas: GET /api/publicaciones, /api/desarrolladores y /api/perfilesprofesionales
+    protected override async Task OnInitializedAsync()
+    {
+        var tareaPublicaciones = repository.GetAsync<List<Publicacion>>("/api/publicaciones");
+        var tareaDesarrolladores = repository.GetAsync<List<Desarrollador>>("/api/desarrolladores");
+        var tareaPerfiles = repository.GetAsync<List<PerfilProfesional>>("/api/perfilesprofesionales");
+        await Task.WhenAll(tareaPublicaciones, tareaDesarrolladores, tareaPerfiles);
+
+        var respuestaPublicaciones = await tareaPublicaciones;
+        var respuestaDesarrolladores = await tareaDesarrolladores;
+        var respuestaPerfiles = await tareaPerfiles;
+
+        if (respuestaPublicaciones.Error || respuestaDesarrolladores.Error || respuestaPerfiles.Error)
+        {
+            await swal.FireAsync("Error", "No se pudieron cargar las listas del formulario. Revisa que el API esté encendido.", SweetAlertIcon.Error);
+            return;
+        }
+
+        publicaciones = respuestaPublicaciones.Response.OrderBy(p => p.Titulo).ToList();
+        desarrolladores = respuestaDesarrolladores.Response.OrderBy(d => d.Nombre).ToList();
+        desarrolladoresConPerfil = respuestaPerfiles.Response.Select(p => p.IdDesarrollador).ToHashSet();
+    }
+
+    // Solo se puede aplicar a publicaciones PUBLICADA y sin vencer (RN26)
+    private IEnumerable<Publicacion> PublicacionesDisponibles()
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        return publicaciones.Where(p => p.Estado == "PUBLICADA"
+            && (p.FechaVencimiento == null || p.FechaVencimiento >= hoy));
+    }
+
+    // Solo pueden aplicar desarrolladores con perfil profesional (RN27)
+    private IEnumerable<Desarrollador> DesarrolladoresConPerfil()
+    {
+        return desarrolladores.Where(d => desarrolladoresConPerfil.Contains(d.Id));
+    }
+
+    private string NombreDesarrollador(int id)
+    {
+        var desarrollador = desarrolladores.FirstOrDefault(d => d.Id == id);
+        return desarrollador is null ? "Desarrollador inactivo" : $"{desarrollador.Nombre} {desarrollador.Apellido}";
+    }
+
+    private IEnumerable<string> EstadosDisponibles()
+    {
+        var siguientes = transiciones.TryGetValue(EstadoOriginal, out var lista) ? lista : new string[0];
+        return new[] { EstadoOriginal }.Concat(siguientes);
+    }
+
+    // Si la publicación elegida es un empleo, se limpian monto y plazo (RN30)
+    private void AlCambiarPublicacion()
+    {
+        if (!EsServicio)
+        {
+            Aplicacion.MontoPropuesto = null;
+            Aplicacion.PlazoEstimado = null;
+        }
+    }
+
+    private async Task EnviarAsync()
+    {
+        if (!EsServicio)
+        {
+            Aplicacion.MontoPropuesto = null;
+            Aplicacion.PlazoEstimado = null;
+        }
+        else if (Aplicacion.MontoPropuesto == null || Aplicacion.MontoPropuesto <= 0 || Aplicacion.PlazoEstimado == null)
+        {
+            // RN30: en un servicio el monto (mayor que cero) y el plazo son obligatorios
+            await swal.FireAsync("Faltan datos", "Para aplicar a un servicio indica un monto propuesto mayor que cero y el plazo estimado en días.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Aplicacion.Mensaje))
+        {
+            Aplicacion.Mensaje = null;
+        }
+
+        await OnSubmit.InvokeAsync();
+    }
+
+    // Si el usuario cambió algo y quiere salir sin guardar, le pide confirmación
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        var formWasEdited = editContext.IsModified();
+        if (!formWasEdited || FormPostedSuccessfully)
+        {
+            return;
+        }
+
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "¿Deseas abandonar la página y perder los cambios?",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true
+        });
+
+        var confirm = !string.IsNullOrEmpty(result.Value);
+        if (confirm)
+        {
+            return;
+        }
+
+        context.PreventNavigation();
+    }
+}

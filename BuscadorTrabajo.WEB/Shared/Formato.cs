@@ -56,6 +56,11 @@ namespace BuscadorTrabajo.WEB.Shared
                 "REMOTO" => "Remoto",
                 "HIBRIDO" => "Híbrido",
                 "PRESENCIAL" => "Presencial",
+                "PENDIENTE" => "Pendiente",
+                "EN_REVISION" => "En revisión",
+                "ACEPTADA" => "Aceptada",
+                "RECHAZADA" => "Rechazada",
+                "RETIRADA" => "Retirada",
                 _ => valor
             };
         }

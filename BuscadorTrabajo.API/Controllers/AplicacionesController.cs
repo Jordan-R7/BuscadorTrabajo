@@ -115,6 +115,12 @@ namespace BuscadorTrabajo.API.Controllers
                 return BadRequest("El desarrollador indicado no existe."); //400
             }
 
+            // Un desarrollador desactivado no puede aplicar a nuevas publicaciones
+            if (!desarrollador.Activo)
+            {
+                return BadRequest("El desarrollador está inactivo y no puede aplicar."); //400
+            }
+
             // El desarrollador debe tener perfil profesional (RN27)
             if (!await _context.PerfilesProfesionales.AnyAsync(x => x.IdDesarrollador == aplicacion.IdDesarrollador))
             {

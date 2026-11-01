@@ -1,0 +1,79 @@
+﻿@page "/aplicaciones/edit/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar aplicación</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/aplicaciones">‹ Volver a aplicaciones</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar aplicación</h1>
+            <p class="bt-subtitle">La publicación y el desarrollador no se pueden cambiar. El estado solo avanza a los estados permitidos.</p>
+        </div>
+    </div>
+
+    @if (aplicacion is null)
+    {
+        <div class="bt-loading-card" role="status" aria-live="polite">
+    <div class="bt-spinner"></div>
+    <p>Cargando información...</p>
+    </div>
+    }
+    else
+    {
+        <AplicacionForm @ref="aplicacionForm" Aplicacion="aplicacion" EstadoOriginal="@estadoOriginal" OnSubmit="EditAsync" ReturnAction="Return" />
+    }
+</div>
+
+@code {
+    private Aplicacion aplicacion;
+    private AplicacionForm aplicacionForm;
+    private string estadoOriginal;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    // Trae la aplicación a editar: GET /api/aplicaciones/{id}
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.GetAsync<Aplicacion>($"/api/aplicaciones/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/aplicaciones");
+                return;
+            }
+
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        estadoOriginal = responseHttp.Response.Estado;
+        aplicacion = responseHttp.Response;
+    }
+
+    // Guarda los cambios: PUT /api/aplicaciones
+    private async Task EditAsync()
+    {
+        var responseHttp = await repository.PutAsync("/api/aplicaciones", aplicacion);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        aplicacionForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/aplicaciones");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/aplicaciones");
+    }
+}

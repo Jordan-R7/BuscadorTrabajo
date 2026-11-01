@@ -142,7 +142,11 @@
         }
 
         desarrolladores = respuestaDesarrolladores.Response.ToDictionary(d => d.Id, d => d.Nombre + " " + d.Apellido);
-        perfiles = respuestaPerfiles.Response.OrderBy(p => NombreDesarrollador(p.IdDesarrollador)).ToList();
+        // Solo perfiles de desarrolladores activos (el API ya no lista los inactivos)
+        perfiles = respuestaPerfiles.Response
+            .Where(p => desarrolladores.ContainsKey(p.IdDesarrollador))
+            .OrderBy(p => NombreDesarrollador(p.IdDesarrollador))
+            .ToList();
         habilidades = respuestaHabilidades.Response.OrderBy(h => h.Nombre).ToList();
 
         await LoadAsignacionesAsync();

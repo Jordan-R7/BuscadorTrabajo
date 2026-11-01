@@ -1,0 +1,77 @@
+﻿@page "/administradores/edit/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Editar administrador</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/administradores">‹ Volver a administradores</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Editar administrador</h1>
+            <p class="bt-subtitle">Actualiza los datos del administrador.</p>
+        </div>
+    </div>
+
+    @if (administrador is null)
+    {
+        <div class="bt-loading-card" role="status" aria-live="polite">
+    <div class="bt-spinner"></div>
+    <p>Cargando información...</p>
+    </div>
+    }
+    else
+    {
+        <AdministradorForm @ref="administradorForm" Administrador="administrador" OnSubmit="EditAsync" ReturnAction="Return" />
+    }
+</div>
+
+@code {
+    private Administrador administrador;
+    private AdministradorForm administradorForm;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    // Trae el administrador a editar: GET /api/administradores/{id}
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.GetAsync<Administrador>($"/api/administradores/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/administradores");
+                return;
+            }
+
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        administrador = responseHttp.Response;
+    }
+
+    // Guarda los cambios: PUT /api/administradores
+    private async Task EditAsync()
+    {
+        var responseHttp = await repository.PutAsync("/api/administradores", administrador);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        administradorForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/administradores");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/administradores");
+    }
+}

@@ -1208,3 +1208,44 @@
     font-size: 13px;
     text-align: right;
 }
+
+
+/* ---------- Aplicaciones: estados ---------- */
+.bt-estado-pendiente::before {
+    background-color: var(--sn-amber);
+}
+
+.bt-estado-en_revision::before {
+    background-color: var(--sn-primary);
+}
+
+.bt-estado-aceptada::before {
+    background-color: #5FD3A0;
+}
+
+.bt-estado-rechazada::before {
+    background-color: #E07A7A;
+}
+
+.bt-estado-retirada::before {
+    background-color: var(--sn-muted);
+}
+
+.bt-mensaje {
+    margin: 0;
+    padding: 10px 12px;
+    border-left: 3px solid var(--sn-border);
+    border-radius: 6px;
+    background-color: var(--sn-bg);
+    color: var(--sn-mineral);
+    font-size: 14px;
+    font-style: italic;
+}
+
+.bt-readonly {
+    padding: 9px 12px;
+    border: 1px dashed var(--sn-border);
+    border-radius: 8px;
+    color: var(--sn-text);
+    font-size: 15px;
+}

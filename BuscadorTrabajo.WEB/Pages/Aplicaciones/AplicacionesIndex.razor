@@ -1,0 +1,261 @@
+﻿@page "/aplicaciones"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<PageTitle>Aplicaciones</PageTitle>
+
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Aplicaciones</h1>
+            <p class="bt-subtitle">Postulaciones de los desarrolladores a ofertas de empleo y solicitudes de servicio.</p>
+        </div>
+        <a class="bt-btn bt-btn-primary" href="/aplicaciones/create">+ Nueva aplicación</a>
+    </div>
+
+    @if (aplicaciones is null)
+    {
+        <div class="bt-empty">Cargando aplicaciones...</div>
+    }
+    else
+    {
+        var filtradas = Filtrar();
+        var pagina = filtradas.Skip((currentPage - 1) * PageSize).Take(PageSize).ToList();
+        var totalPaginas = (int)Math.Ceiling(filtradas.Count / (double)PageSize);
+
+        @* Buscador y filtros *@
+        <div class="bt-search">
+            <span class="bt-search-icon">⌕</span>
+            <input type="search"
+                   placeholder="Buscar por publicación o desarrollador..."
+                   @bind="busqueda"
+                   @bind:event="oninput"
+                   @bind:after="ReiniciarPagina" />
+        </div>
+
+        <div class="bt-toolbar">
+            <div class="bt-pills">
+                @foreach (var estado in filtrosEstado)
+                {
+                    var valor = estado;
+                    <button class="bt-pill @(filtroEstado == valor ? "active" : "")" type="button" @onclick="@(() => CambiarEstado(valor))">
+                        @(valor == "" ? "Todas" : Formato.Texto(valor)) (@(Contar(valor)))
+                    </button>
+                }
+            </div>
+
+            @if (IdPublicacion != null)
+            {
+                <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/aplicaciones">Ver todas las publicaciones</a>
+            }
+        </div>
+
+        if (IdPublicacion != null)
+        {
+            <p class="bt-subtitle" style="margin: -4px 0 16px;">Mostrando solo las aplicaciones de: <strong>@TituloPublicacion(IdPublicacion.Value)</strong></p>
+        }
+
+        if (filtradas.Count == 0)
+        {
+            <div class="bt-empty">No hay aplicaciones que coincidan con los filtros.</div>
+        }
+        else
+        {
+            <div class="bt-grid">
+                @foreach (var aplicacion in pagina)
+                {
+                    var publicacion = publicaciones.GetValueOrDefault(aplicacion.IdPublicacion);
+
+                    <article class="bt-card">
+                        <div class="bt-card-head">
+                            <div class="bt-avatar bt-avatar-violet">@Formato.Iniciales(NombreDesarrollador(aplicacion.IdDesarrollador))</div>
+                            <div class="bt-card-heading">
+                                <h3 class="bt-card-title">@NombreDesarrollador(aplicacion.IdDesarrollador)</h3>
+                                <span class="bt-card-meta">Aplicó el @Formato.Fecha(aplicacion.FechaAplicacion)</span>
+                            </div>
+                        </div>
+
+                        <div class="bt-pub-head">
+                            <a class="bt-back" style="margin: 0;" href="/publicaciones/@aplicacion.IdPublicacion">@TituloPublicacion(aplicacion.IdPublicacion) ›</a>
+                            @if (publicacion != null)
+                            {
+                                <span class="bt-badge @(publicacion.Tipo == "EMPLEO" ? "bt-badge-empleo" : "bt-badge-servicio")">@Formato.Texto(publicacion.Tipo)</span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(aplicacion.Mensaje))
+                        {
+                            <p class="bt-mensaje">&ldquo;@aplicacion.Mensaje&rdquo;</p>
+                        }
+
+                        <ul class="bt-info">
+                            <li><span>Estado</span><span class="bt-estado bt-estado-@(aplicacion.Estado.ToLowerInvariant())">@Formato.Texto(aplicacion.Estado)</span></li>
+                            @if (aplicacion.MontoPropuesto != null)
+                            {
+                                <li><span>Propuesta</span>@Formato.Dinero(aplicacion.MontoPropuesto, publicacion?.Moneda ?? "COP")</li>
+                            }
+                            @if (aplicacion.PlazoEstimado != null)
+                            {
+                                <li><span>Plazo</span>@aplicacion.PlazoEstimado días</li>
+                            }
+                        </ul>
+
+                        <div class="bt-card-foot">
+                            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/aplicaciones/edit/@aplicacion.Id">Editar / estado</a>
+                            <button class="bt-btn bt-btn-danger bt-btn-sm" @onclick="@(() => DeleteAsync(aplicacion))">Borrar</button>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <Pagination CurrentPage="currentPage" TotalPages="totalPaginas" TotalRecords="filtradas.Count" SelectedPage="SelectedPage" />
+        }
+    }
+</div>
+
+@code {
+    private const int PageSize = 6;
+
+    // Llega desde el detalle de una publicación: /aplicaciones?publicacion=5
+    [SupplyParameterFromQuery(Name = "publicacion")]
+    public int? IdPublicacion { get; set; }
+
+    private List<Aplicacion> aplicaciones;
+    private Dictionary<int, Publicacion> publicaciones = new();
+    private Dictionary<int, string> desarrolladores = new();
+
+    private readonly string[] filtrosEstado = { "", "PENDIENTE", "EN_REVISION", "ACEPTADA", "RECHAZADA", "RETIRADA" };
+    private string filtroEstado = "";
+    private string busqueda = "";
+    private int currentPage = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    // GET /api/aplicaciones, /api/publicaciones y /api/desarrolladores al mismo tiempo
+    private async Task LoadAsync()
+    {
+        var tareaAplicaciones = repository.GetAsync<List<Aplicacion>>("/api/aplicaciones");
+        var tareaPublicaciones = repository.GetAsync<List<Publicacion>>("/api/publicaciones");
+        var tareaDesarrolladores = repository.GetAsync<List<Desarrollador>>("/api/desarrolladores");
+        await Task.WhenAll(tareaAplicaciones, tareaPublicaciones, tareaDesarrolladores);
+
+        var respuestaAplicaciones = await tareaAplicaciones;
+        if (respuestaAplicaciones.Error)
+        {
+            var mensajeError = await respuestaAplicaciones.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            aplicaciones = new List<Aplicacion>();
+            return;
+        }
+
+        var respuestaPublicaciones = await tareaPublicaciones;
+        if (!respuestaPublicaciones.Error)
+        {
+            publicaciones = respuestaPublicaciones.Response.ToDictionary(p => p.Id);
+        }
+
+        var respuestaDesarrolladores = await tareaDesarrolladores;
+        if (!respuestaDesarrolladores.Error)
+        {
+            desarrolladores = respuestaDesarrolladores.Response.ToDictionary(d => d.Id, d => d.Nombre + " " + d.Apellido);
+        }
+
+        // Las más recientes primero
+        aplicaciones = respuestaAplicaciones.Response.OrderByDescending(a => a.Id).ToList();
+    }
+
+    private List<Aplicacion> Filtrar()
+    {
+        IEnumerable<Aplicacion> consulta = aplicaciones;
+
+        if (IdPublicacion != null)
+        {
+            consulta = consulta.Where(a => a.IdPublicacion == IdPublicacion);
+        }
+
+        if (!string.IsNullOrEmpty(filtroEstado))
+        {
+            consulta = consulta.Where(a => a.Estado == filtroEstado);
+        }
+
+        if (!string.IsNullOrWhiteSpace(busqueda))
+        {
+            var texto = busqueda.Trim();
+            consulta = consulta.Where(a =>
+                TituloPublicacion(a.IdPublicacion).Contains(texto, StringComparison.OrdinalIgnoreCase)
+                || NombreDesarrollador(a.IdDesarrollador).Contains(texto, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return consulta.ToList();
+    }
+
+    private int Contar(string estado)
+    {
+        var baseLista = IdPublicacion == null ? aplicaciones : aplicaciones.Where(a => a.IdPublicacion == IdPublicacion).ToList();
+        return estado == "" ? baseLista.Count : baseLista.Count(a => a.Estado == estado);
+    }
+
+    private string TituloPublicacion(int id)
+    {
+        return publicaciones.TryGetValue(id, out var publicacion) ? publicacion.Titulo : "Publicación";
+    }
+
+    // Los desarrolladores desactivados no vienen en la lista, pero sus aplicaciones se conservan
+    private string NombreDesarrollador(int id)
+    {
+        return desarrolladores.GetValueOrDefault(id, "Desarrollador inactivo");
+    }
+
+    private void CambiarEstado(string estado)
+    {
+        filtroEstado = estado;
+        currentPage = 1;
+    }
+
+    private void ReiniciarPagina()
+    {
+        currentPage = 1;
+    }
+
+    private void SelectedPage(int page)
+    {
+        currentPage = page;
+    }
+
+    // Pide confirmación y borra: DELETE /api/aplicaciones/{id}
+    private async Task DeleteAsync(Aplicacion aplicacion)
+    {
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Seguro que quieres borrar la aplicación de {NombreDesarrollador(aplicacion.IdDesarrollador)} a {TituloPublicacion(aplicacion.IdPublicacion)}?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/aplicaciones/{aplicacion.Id}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoadAsync();
+
+        // Si la página quedó vacía, vuelve a la anterior
+        var totalPaginas = (int)Math.Ceiling(Filtrar().Count / (double)PageSize);
+        if (currentPage > totalPaginas && currentPage > 1)
+        {
+            currentPage = totalPaginas;
+        }
+    }
+}

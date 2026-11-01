@@ -1,0 +1,59 @@
+﻿@page "/aplicaciones/create"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Nueva aplicación</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="@VolverA">‹ Volver</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Aplicar a una publicación</h1>
+            <p class="bt-subtitle">La aplicación se crea en estado Pendiente.</p>
+        </div>
+    </div>
+
+    <AplicacionForm @ref="aplicacionForm" Aplicacion="aplicacion" OnSubmit="CreateAsync" ReturnAction="Return" />
+</div>
+
+@code {
+    private Aplicacion aplicacion = new();
+    private AplicacionForm aplicacionForm;
+
+    // Llega desde el botón "Aplicar" del detalle: /aplicaciones/create?publicacion=5
+    [SupplyParameterFromQuery(Name = "publicacion")]
+    public int? IdPublicacion { get; set; }
+
+    private string VolverA => IdPublicacion != null ? $"/publicaciones/{IdPublicacion}" : "/aplicaciones";
+
+    protected override void OnInitialized()
+    {
+        if (IdPublicacion != null)
+        {
+            aplicacion.IdPublicacion = IdPublicacion.Value;
+        }
+    }
+
+    // Envía la aplicación al API: POST /api/aplicaciones
+    private async Task CreateAsync()
+    {
+        var responseHttp = await repository.PostAsync("/api/aplicaciones", aplicacion);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        aplicacionForm.FormPostedSuccessfully = true;
+        await swal.FireAsync("Aplicación enviada", "La aplicación quedó en estado Pendiente.", SweetAlertIcon.Success);
+        navigationManager.NavigateTo($"/aplicaciones?publicacion={aplicacion.IdPublicacion}");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo(VolverA);
+    }
+}

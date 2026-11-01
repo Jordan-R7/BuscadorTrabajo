@@ -22,8 +22,10 @@ namespace BuscadorTrabajo.API.Controllers
         [HttpGet]
         public async Task<ActionResult> Get()
         {
+            // Solo los desarrolladores activos: los desactivados no se listan
             return Ok(await _context.Desarrolladores
                 .AsNoTracking()
+                .Where(x => x.Activo)
                 .OrderBy(x => x.Id)
                 .ToListAsync());
         }
@@ -36,8 +38,10 @@ namespace BuscadorTrabajo.API.Controllers
             if (pageSize < 1) pageSize = 5;
             if (pageSize > 50) pageSize = 50;
 
+            // El filtro va antes de contar y paginar, para que el total sea correcto
             var query = _context.Desarrolladores
                 .AsNoTracking()
+                .Where(x => x.Activo)
                 .OrderBy(x => x.Id);
 
             var totalRecords = await query.CountAsync(); // Cuenta todos los registros
@@ -268,8 +272,8 @@ namespace BuscadorTrabajo.API.Controllers
                     Pais = registro.PerfilProfesional.Pais,
                     Ciudad = registro.PerfilProfesional.Ciudad,
                     Modalidad = registro.PerfilProfesional.Modalidad,
-                    GitHub = registro.PerfilProfesional.GitHub,
-                    LinkedIn = registro.PerfilProfesional.LinkedIn
+                    GitHub = TextoOpcional(registro.PerfilProfesional.GitHub),
+                    LinkedIn = TextoOpcional(registro.PerfilProfesional.LinkedIn)
                 };
 
                 _context.PerfilesProfesionales.Add(perfil);
@@ -307,7 +311,7 @@ namespace BuscadorTrabajo.API.Controllers
                     Institucion = c.Institucion,
                     FechaEmision = c.FechaEmision,
                     FechaVencimiento = c.FechaVencimiento,
-                    UrlCertificado = c.UrlCertificado
+                    UrlCertificado = TextoOpcional(c.UrlCertificado)
                 }).ToList();
 
                 // 6. Agregar los registros relacionados.
@@ -534,8 +538,8 @@ namespace BuscadorTrabajo.API.Controllers
                 perfil.Pais = registro.PerfilProfesional.Pais;
                 perfil.Ciudad = registro.PerfilProfesional.Ciudad;
                 perfil.Modalidad = registro.PerfilProfesional.Modalidad;
-                perfil.GitHub = registro.PerfilProfesional.GitHub;
-                perfil.LinkedIn = registro.PerfilProfesional.LinkedIn;
+                perfil.GitHub = TextoOpcional(registro.PerfilProfesional.GitHub);
+                perfil.LinkedIn = TextoOpcional(registro.PerfilProfesional.LinkedIn);
 
                 // 13. Actualizar o crear las educaciones.
                 foreach (var item in registro.Educaciones)
@@ -613,7 +617,7 @@ namespace BuscadorTrabajo.API.Controllers
                     certificacion.Institucion = item.Institucion;
                     certificacion.FechaEmision = item.FechaEmision;
                     certificacion.FechaVencimiento = item.FechaVencimiento;
-                    certificacion.UrlCertificado = item.UrlCertificado;
+                    certificacion.UrlCertificado = TextoOpcional(item.UrlCertificado);
                 }
 
                 // 18. Eliminar las certificaciones que fueron quitadas.
@@ -666,25 +670,85 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // DELETE /api/desarrolladores/5
+        // DELETE /api/desarrolladores/5?confirmarConservarHistorial=true
+        //
+        // Sin aplicaciones: se borra de verdad, con su perfil y todo lo que cuelga del perfil.
+        // Con aplicaciones: no se borra, para no perder el historial. Primero responde 409
+        // pidiendo confirmación; si se confirma, el desarrollador queda inactivo (Activo = false).
         [HttpDelete("{id:int}")]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(int id, [FromQuery] bool confirmarConservarHistorial = false)
         {
             var desarrollador = await _context.Desarrolladores.FirstOrDefaultAsync(x => x.Id == id);
-            if (desarrollador == null)
+            if (desarrollador == null || !desarrollador.Activo)
             {
-                return NotFound("No existe un desarrollador con ese Id."); //404
+                return NotFound("No existe un desarrollador activo con ese Id."); //404
             }
+
+            var tieneAplicaciones = await _context.Aplicaciones.AnyAsync(x => x.IdDesarrollador == id);
+
+            // ---------- Con aplicaciones: desactivar, conservando el historial ----------
+            if (tieneAplicaciones)
+            {
+                if (!confirmarConservarHistorial)
+                {
+                    return Conflict(new
+                    {
+                        codigo = CodigoRequiereConfirmacion,
+                        mensaje = "Este desarrollador tiene aplicaciones asociadas. Si continúas, se conservará su historial y el desarrollador quedará inactivo."
+                    }); //409
+                }
+
+                desarrollador.Activo = false;
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    codigo = "DESACTIVADO",
+                    mensaje = "El desarrollador quedó inactivo. Sus aplicaciones se conservaron."
+                }); //200
+            }
+
+            // ---------- Sin aplicaciones: borrado físico dentro de una transacción ----------
+            await using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                _context.Remove(desarrollador);
+                // 1. Borrar el perfil profesional. Su educación, experiencia, certificaciones
+                //    y habilidades se borran solas (eliminación en cascada del DataContext).
+                var perfil = await _context.PerfilesProfesionales.FirstOrDefaultAsync(x => x.IdDesarrollador == id);
+                if (perfil != null)
+                {
+                    _context.PerfilesProfesionales.Remove(perfil);
+                    await _context.SaveChangesAsync();
+                }
+
+                // 2. Borrar el desarrollador
+                _context.Desarrolladores.Remove(desarrollador);
                 await _context.SaveChangesAsync();
+
+                // 3. Confirmar todo junto
+                await transaction.CommitAsync();
                 return NoContent(); //204
             }
             catch (DbUpdateException ex) when (ErroresBaseDatos.EsRelacion(ex))
             {
-                return Conflict("No se puede eliminar el desarrollador porque tiene un perfil profesional o aplicaciones asociadas."); //409
+                await transaction.RollbackAsync();
+                return Conflict("No se puede eliminar el desarrollador porque tiene información relacionada."); //409
             }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        // Código que el front usa para saber que debe pedir la segunda confirmación
+        public const string CodigoRequiereConfirmacion = "REQUIERE_CONFIRMACION_HISTORIAL";
+
+        // Un texto opcional vacío se guarda como null
+        private static string TextoOpcional(string texto)
+        {
+            return string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
         }
 
         // Reglas que necesitan consultar la base de datos antes de guardar.

@@ -1,0 +1,123 @@
+﻿@page "/administradores"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+<PageTitle>Administradores</PageTitle>
+
+<div class="bt-page">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Administradores</h1>
+            <p class="bt-subtitle">Personas que administran la plataforma: categorías, habilidades y usuarios.</p>
+        </div>
+        <a class="bt-btn bt-btn-primary" href="/administradores/create">+ Nuevo administrador</a>
+    </div>
+
+    <GenericList MyList="Administradores">
+        <NoRecords>
+            <div class="bt-empty">Todavía no hay administradores registrados.</div>
+        </NoRecords>
+        <Body>
+            <div class="bt-grid">
+                @foreach (var administrador in Administradores)
+                {
+                    <article class="bt-card">
+                        <div class="bt-card-head">
+                            <div class="bt-avatar bt-avatar-amber">@(Formato.Iniciales(administrador.Nombre + " " + administrador.Apellido))</div>
+                            <div class="bt-card-heading">
+                                <h3 class="bt-card-title">@administrador.Nombre @administrador.Apellido</h3>
+                                <span class="bt-card-meta">C.C. @administrador.Cedula</span>
+                            </div>
+                        </div>
+
+                        <ul class="bt-info">
+                            <li><span>Correo</span>@administrador.Correo</li>
+                            <li><span>Celular</span>@administrador.Celular</li>
+                        </ul>
+
+                        <div class="bt-card-foot">
+                            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/administradores/edit/@administrador.Id">Editar</a>
+                            <button class="bt-btn bt-btn-danger bt-btn-sm" @onclick="@(() => DeleteAsync(administrador))">Borrar</button>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <Pagination CurrentPage="currentPage" TotalPages="totalPages" TotalRecords="totalRecords" SelectedPage="SelectedPageAsync" />
+        </Body>
+    </GenericList>
+</div>
+
+@code {
+    private const int PageSize = 6;
+
+    public List<Administrador> Administradores { get; set; }
+
+    private int currentPage = 1;
+    private int totalPages;
+    private int totalRecords;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync(1);
+    }
+
+    // Pide una página al API: GET /api/administradores/paginated?page=1&pageSize=6
+    private async Task LoadAsync(int page)
+    {
+        var responseHttp = await repository.GetAsync<PaginatedResponse<Administrador>>($"/api/administradores/paginated?page={page}&pageSize={PageSize}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            Administradores = new List<Administrador>();
+            return;
+        }
+
+        var respuesta = responseHttp.Response;
+
+        // Si la página quedó vacía (por ejemplo, después de borrar su último registro), vuelve a la anterior
+        if (respuesta.Data.Count == 0 && respuesta.Page > 1)
+        {
+            await LoadAsync(respuesta.Page - 1);
+            return;
+        }
+
+        Administradores = respuesta.Data;
+        currentPage = respuesta.Page;
+        totalPages = respuesta.TotalPages;
+        totalRecords = respuesta.TotalRecords;
+    }
+
+    private async Task SelectedPageAsync(int page)
+    {
+        await LoadAsync(page);
+    }
+
+    // Pide confirmación y borra: DELETE /api/administradores/{id}
+    private async Task DeleteAsync(Administrador administrador)
+    {
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Seguro que quieres borrar al administrador {administrador.Nombre} {administrador.Apellido}?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            return;
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/administradores/{administrador.Id}");
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoadAsync(currentPage);
+    }
+}

@@ -158,42 +158,83 @@
         await LoadAsync(page);
     }
 
-    // DELETE /api/desarrolladores/{id}
+    // Eliminación con dos confirmaciones:
+    // 1. "¿Seguro?" -> DELETE /api/desarrolladores/{id}
+    //    - 204: no tenía aplicaciones y se borró.
+    //    - 409 con código REQUIERE_CONFIRMACION_HISTORIAL: tiene aplicaciones.
+    // 2. "Se conservará el historial" -> DELETE /api/desarrolladores/{id}?confirmarConservarHistorial=true
+    //    - 200: el desarrollador quedó inactivo.
     private async Task DeleteAsync(Desarrollador desarrollador)
     {
-        var result = await swal.FireAsync(new SweetAlertOptions
+        // ---------- Primera confirmación ----------
+        var primera = await swal.FireAsync(new SweetAlertOptions
         {
             Title = "Confirmar eliminación",
             Text = $"¿Seguro que deseas eliminar a {desarrollador.Nombre} {desarrollador.Apellido}?",
             Icon = SweetAlertIcon.Warning,
             ShowCancelButton = true,
-            ConfirmButtonText = "Sí, eliminar",
+            ConfirmButtonText = "Sí, continuar",
             CancelButtonText = "Cancelar"
         });
 
-        if (string.IsNullOrEmpty(result.Value))
+        if (string.IsNullOrEmpty(primera.Value))
         {
+            return; // Canceló: no se modifica nada
+        }
+
+        var responseHttp = await repository.DeleteAsync($"/api/desarrolladores/{desarrollador.Id}");
+
+        if (!responseHttp.Error)
+        {
+            await swal.FireAsync(
+                "Eliminado",
+                "El desarrollador y su perfil profesional fueron eliminados.",
+                SweetAlertIcon.Success);
+
+            await LoadAsync(currentPage);
             return;
         }
 
-        var responseHttp = await repository.DeleteAsync(
-            $"/api/desarrolladores/{desarrollador.Id}");
-
-        if (responseHttp.Error)
+        // ¿El API pide la segunda confirmación porque tiene aplicaciones?
+        var codigo = await responseHttp.GetCodigoErrorAsync();
+        if (responseHttp.HttpResponseMessage.StatusCode != System.Net.HttpStatusCode.Conflict
+            || codigo != "REQUIERE_CONFIRMACION_HISTORIAL")
         {
             var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("No se pudo eliminar", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
 
-            await swal.FireAsync(
-                "No se pudo eliminar",
-                mensajeError,
-                SweetAlertIcon.Error);
+        // ---------- Segunda confirmación ----------
+        var segunda = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "El desarrollador tiene aplicaciones",
+            Text = $"{desarrollador.Nombre} {desarrollador.Apellido} ya aplicó a publicaciones. " +
+                   "Para no perder ese historial no se borrará: quedará inactivo y dejará de aparecer en la lista.",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Sí, desactivar",
+            CancelButtonText = "Cancelar"
+        });
 
+        if (string.IsNullOrEmpty(segunda.Value))
+        {
+            return; // Canceló: no se modifica nada
+        }
+
+        var respuestaDesactivar = await repository.DeleteAsync(
+            $"/api/desarrolladores/{desarrollador.Id}?confirmarConservarHistorial=true");
+
+        if (respuestaDesactivar.Error)
+        {
+            var mensajeError = await respuestaDesactivar.GetErrorMessageAsync();
+            await swal.FireAsync("No se pudo desactivar", mensajeError, SweetAlertIcon.Error);
             return;
         }
 
         await swal.FireAsync(
-            "Eliminado",
-            "El desarrollador fue eliminado correctamente.",
+            "Desactivado",
+            "El desarrollador quedó inactivo. Sus aplicaciones se conservaron.",
             SweetAlertIcon.Success);
 
         await LoadAsync(currentPage);

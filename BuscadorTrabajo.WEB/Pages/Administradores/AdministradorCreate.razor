@@ -1,0 +1,44 @@
+﻿@page "/administradores/create"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Nuevo administrador</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/administradores">‹ Volver a administradores</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Nuevo administrador</h1>
+            <p class="bt-subtitle">La cédula no se puede repetir.</p>
+        </div>
+    </div>
+
+    <AdministradorForm @ref="administradorForm" Administrador="administrador" OnSubmit="CreateAsync" ReturnAction="Return" />
+</div>
+
+@code {
+    private Administrador administrador = new();
+    private AdministradorForm administradorForm;
+
+    // Envía el administrador al API: POST /api/administradores
+    private async Task CreateAsync()
+    {
+        var responseHttp = await repository.PostAsync("/api/administradores", administrador);
+        if (responseHttp.Error)
+        {
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        administradorForm.FormPostedSuccessfully = true;
+        navigationManager.NavigateTo("/administradores");
+    }
+
+    private void Return()
+    {
+        navigationManager.NavigateTo("/administradores");
+    }
+}

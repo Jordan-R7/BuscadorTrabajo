@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using BuscadorTrabajo.Shared.Validaciones;
 using System.Text.Json.Serialization;
 
 namespace BuscadorTrabajo.Shared.Entities
@@ -42,12 +43,12 @@ namespace BuscadorTrabajo.Shared.Entities
 
         [Display(Name = "GitHub")]
         [MaxLength(300, ErrorMessage = "El GitHub no puede tener más de 300 caracteres")]
-        [Url(ErrorMessage = "El sitio web debe ser una URL válida")]
+        [UrlOpcional(ErrorMessage = "El sitio web debe ser una URL válida")]
         public string GitHub { get; set; }
 
         [Display(Name = "LinkedIn")]
         [MaxLength(300, ErrorMessage = "El LinkedIn no puede tener más de 300 caracteres")]
-        [Url(ErrorMessage = "El sitio web debe ser una URL válida")]
+        [UrlOpcional(ErrorMessage = "El sitio web debe ser una URL válida")]
         public string LinkedIn { get; set; }
 
 

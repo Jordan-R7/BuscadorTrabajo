@@ -10,9 +10,6 @@ Plataforma web que conecta a desarrolladores con empresas y clientes del área d
 
 - Jordan del Aguila
 - Brayan Andrés Florez
-- Juan David Mosquera
-- Joan Manuel Londoño
-- Samuel Maya
 
 ## Video demostrativo
 
@@ -235,9 +232,7 @@ Cada recurso tiene estos endpoints:
 |---|---|
 | Jordan del Aguila | Repositorio e integración de Pull Requests. Corrección de validaciones decimales. Módulo de Desarrolladores (registro por pasos, perfil completo y endpoints transaccionales). |
 | Brayan Andrés Florez | DataContext, migraciones y SeedDb. Controladores con paginación, validaciones y reglas de negocio. Front de Inicio, Publicaciones, Aplicaciones, Empresas, Clientes, Habilidades, Categorías, Administradores y tablas N:M. Eliminación y desactivación de desarrolladores. Pruebas y documentación. |
-| Juan David Mosquera | _Completar_ |
-| Joan Manuel Londoño | _Completar_ |
-| Samuel Maya | _Completar_ |
+
 
 ## Fuera del alcance de esta entrega
 

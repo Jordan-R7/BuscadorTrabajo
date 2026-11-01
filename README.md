@@ -172,8 +172,7 @@ Cada recurso tiene estos endpoints:
 
 ## Pruebas
 
-- **Swagger y navegador:** 145 casos manuales sobre el WebAPI. Cubren el CRUD de las 14 entidades, la paginación y sus límites, los códigos 400, 404 y 409, las reglas de publicaciones y aplicaciones, las transiciones de estado, el borrado en cascada y la desactivación de desarrolladores. Todos pasaron, y los datos de prueba se limpiaron al terminar. Detalle en [DOCUMENTACION.md](DOCUMENTACION.md#15-pruebas-realizadas).
-
+- **Swagger y navegador:** 145 casos manuales sobre el WebAPI. Cubren el CRUD de las 14 entidades, la paginación y sus límites, los códigos 400, 404 y 409, las reglas de publicaciones y aplicaciones, las transiciones de estado, el borrado en cascada y la desactivación de desarrolladores. Todos pasaron, y los datos de prueba se limpiaron al terminar. Detalle en [BuscadorTrabajo_Postman.json]
 
 ## Resumen de funcionalidades implementadas
 

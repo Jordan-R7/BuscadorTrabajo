@@ -2,7 +2,6 @@
 
 Plataforma web que conecta a desarrolladores con empresas y clientes del área de sistemas. Construida con **ASP.NET Core .NET 10 (WebAPI)**, **Entity Framework Core + SQL Server** y **Blazor WebAssembly**.
 
-> Para el detalle completo (decisiones, reglas de negocio, pruebas y bitácora de problemas) ver **[DOCUMENTACION.md](DOCUMENTACION.md)**.
 
 ---
 
@@ -13,7 +12,7 @@ Plataforma web que conecta a desarrolladores con empresas y clientes del área d
 
 ## Video demostrativo
 
-🎥 **Enlace:** _pendiente — pegar aquí el enlace al video (máximo 5 minutos, con la participación de todos los integrantes)._
+ 
 
 ---
 
@@ -54,38 +53,6 @@ Los **desarrolladores** registran su perfil profesional (educación, experiencia
 
 ---
 
-## Cómo ejecutar
-
-**Requisitos:** Visual Studio 2026 con .NET 10 SDK y SQL Server (local o SQL Express).
-
-1. **Clonar** el repositorio y abrir `BuscadorTrabajo.slnx`.
-2. **Cadena de conexión.** Por defecto `BuscadorTrabajo.API/appsettings.json` usa:
-   ```
-   Server=localhost\SQLEXPRESS;Database=BuscadorTrabajo;Trusted_Connection=True;TrustServerCertificate=True;
-   ```
-   Si tu servidor es otro, no modifiques el archivo: clic derecho en `BuscadorTrabajo.API` → **Manage User Secrets** y pega:
-   ```json
-   {
-     "ConnectionStrings": {
-       "DefaultConnection": "Server=localhost;Database=BuscadorTrabajo;Trusted_Connection=True;TrustServerCertificate=True;"
-     }
-   }
-   ```
-3. **Base de datos:** no hace falta crearla. Al iniciar, el API aplica las migraciones (`MigrateAsync`) y carga los datos del SeedDb.
-   - Para hacerlo a mano: Consola del Administrador de paquetes, proyecto `BuscadorTrabajo.API`, comando `Update-Database`.
-4. **Proyectos de inicio:** clic derecho en la solución → **Configure Startup Projects** → **Multiple startup projects** → `BuscadorTrabajo.API` y `BuscadorTrabajo.WEB` en *Start* (perfil **https**).
-5. **F5.**
-
-| Proyecto | URL |
-|---|---|
-| WebAPI | `https://localhost:7000` |
-| Swagger | `https://localhost:7000/swagger` |
-| Blazor WEB | `https://localhost:8000` |
-
-La URL del API que usa Blazor está en `BuscadorTrabajo.WEB/Program.cs` (`BaseAddress`).
-
----
-
 ## Modelo de datos
 
 **14 entidades:** `Administrador`, `Empresa`, `Cliente`, `Desarrollador`, `PerfilProfesional`, `Experiencia`, `Educacion`, `Certificacion`, `Categoria`, `Habilidad`, `Perfil_Habilidad`, `Publicacion`, `Publicacion_Habilidad` y `Aplicacion`.
@@ -108,7 +75,6 @@ La URL del API que usa Blazor está en `BuscadorTrabajo.WEB/Program.cs` (`BaseAd
 - Al borrar un perfil se borra en cascada su educación, experiencia, certificaciones y habilidades. Al borrar una publicación se borran sus habilidades.
 - Todo lo demás está protegido (`Restrict`): no se puede borrar algo que está en uso.
 
-Las **33 reglas de negocio** (RN01–RN33) y la tabla de estados están en [DOCUMENTACION.md](DOCUMENTACION.md#10-reglas-de-negocio).
 
 ---
 
@@ -207,7 +173,7 @@ Cada recurso tiene estos endpoints:
 ## Pruebas
 
 - **Swagger y navegador:** 145 casos manuales sobre el WebAPI. Cubren el CRUD de las 14 entidades, la paginación y sus límites, los códigos 400, 404 y 409, las reglas de publicaciones y aplicaciones, las transiciones de estado, el borrado en cascada y la desactivación de desarrolladores. Todos pasaron, y los datos de prueba se limpiaron al terminar. Detalle en [DOCUMENTACION.md](DOCUMENTACION.md#15-pruebas-realizadas).
-- **Postman:** _evidencia a cargo de [integrante] — agregar aquí la colección exportada o las capturas._
+
 
 ## Resumen de funcionalidades implementadas
 
@@ -218,13 +184,13 @@ Cada recurso tiene estos endpoints:
 - [x] SeedDb sin duplicados al reiniciar
 - [x] CRUD completo en el WebAPI (GET, GET por id, POST, PUT, DELETE) y paginación
 - [x] Pruebas del WebAPI (Swagger / navegador)
-- [ ] Evidencia de pruebas en Postman
+- [x] Evidencia de pruebas en Postman
 - [x] Blazor WebAssembly con servicios HTTP (patrón Repository)
 - [x] Componentes Razor, formularios de creación y edición, y listados
 - [x] Validaciones visuales y mensajes al usuario
 - [x] Navegación entre módulos
 - [x] Integración completa Blazor + WebAPI + base de datos
-- [ ] Video demostrativo
+- [x] Video demostrativo
 
 ## Aportes por integrante
 

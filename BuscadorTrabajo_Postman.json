@@ -1,0 +1,2124 @@
+{
+  "info": {
+    "_postman_id": "cc293c1d-15f2-41c1-8043-c7fc408416fa",
+    "name": "Buscador Trabajo",
+    "description": "Colección CRUD generada a partir de la colección de ejemplo adjunta y de los controladores/modelos de la rama Jordan_DelAguila del repositorio BuscadorTrabajo (commit ee707495). La colección incluye las 13 entidades que tienen controlador. Los POST guardan automáticamente el Id devuelto en una variable de colección y los GET por Id/DELETE/PUT reutilizan esa variable. Ejecuta manualmente los POST de entidades padre antes de crear sus dependientes. Revisa los Id de relaciones si no usas la base sembrada. Los controladores actuales responden 200 en GET/POST/PUT y 204 en DELETE. Administrador no se incluye porque no hay AdministradoresController en esta rama.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58686331"
+  },
+  "item": [
+    {
+      "name": "Categorías",
+      "description": "Pruebas CRUD de la entidad.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/categorias",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/categorias/{{categoriaId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección categoriaId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear categoría",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/categorias",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable categoriaId. Verifica que las claves foráneas referencien registros existentes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Nombre\": \"Categoria Postman QA\",\n  \"Descripcion\": \"Categoría creada para probar los endpoints desde Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"categoriaId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar categoría",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/categorias/{{categoriaId}}",
+            "description": "Elimina el registro indicado por categoriaId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar categoría",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/categorias",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Nombre\": \"Categoria Postman QA\",\n  \"Descripcion\": \"Categoría creada para probar los endpoints desde Postman.\",\n  \"Id\": {{categoriaId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Empresas",
+      "description": "Pruebas CRUD de la entidad.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/empresas",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/empresas/{{empresaId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección empresaId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear empresa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/empresas",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable empresaId. Verifica que las claves foráneas referencien registros existentes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Nombre\": \"Empresa Postman QA\",\n  \"NIT\": \"901999999-1\",\n  \"Descripcion\": \"Empresa de ejemplo para realizar pruebas de integración de la API.\",\n  \"Pais\": \"Colombia\",\n  \"Ciudad\": \"Medellín\",\n  \"Direccion\": \"Calle 10 # 20-30\",\n  \"Celular\": \"+573001112255\",\n  \"Correo\": \"empresa.postman.qa@example.com\",\n  \"SitioWeb\": \"https://example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"empresaId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar empresa",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/empresas/{{empresaId}}",
+            "description": "Elimina el registro indicado por empresaId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar empresa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/empresas",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Nombre\": \"Empresa Postman QA\",\n  \"NIT\": \"901999999-1\",\n  \"Descripcion\": \"Empresa de ejemplo para realizar pruebas de integración de la API.\",\n  \"Pais\": \"Colombia\",\n  \"Ciudad\": \"Medellín\",\n  \"Direccion\": \"Calle 10 # 20-30\",\n  \"Celular\": \"+573001112255\",\n  \"Correo\": \"empresa.postman.qa@example.com\",\n  \"SitioWeb\": \"https://example.com\",\n  \"Id\": {{empresaId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "description": "Pruebas CRUD de la entidad.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes/{{clienteId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección clienteId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/clientes",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable clienteId. Verifica que las claves foráneas referencien registros existentes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Cedula\": \"9999999991\",\n  \"Nombre\": \"Cliente\",\n  \"Apellido\": \"Postman QA\",\n  \"Celular\": \"+573001112233\",\n  \"Correo\": \"cliente.postman.qa@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"clienteId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar cliente",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes/{{clienteId}}",
+            "description": "Elimina el registro indicado por clienteId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar cliente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/clientes",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Cedula\": \"9999999991\",\n  \"Nombre\": \"Cliente\",\n  \"Apellido\": \"Postman QA\",\n  \"Celular\": \"+573001112233\",\n  \"Correo\": \"cliente.postman.qa@example.com\",\n  \"Id\": {{clienteId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Desarrolladores",
+      "description": "Pruebas CRUD de la entidad.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/desarrolladores",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/desarrolladores/{{desarrolladorId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección desarrolladorId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear desarrollador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/desarrolladores",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable desarrolladorId. Verifica que las claves foráneas referencien registros existentes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Cedula\": \"9999999992\",\n  \"Nombre\": \"Desarrollador\",\n  \"Apellido\": \"Postman QA\",\n  \"Celular\": \"+573001112244\",\n  \"Correo\": \"desarrollador.postman.qa@example.com\",\n  \"FechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"desarrolladorId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar desarrollador",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/desarrolladores/{{desarrolladorId}}",
+            "description": "Elimina el registro indicado por desarrolladorId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar desarrollador",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/desarrolladores",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Cedula\": \"9999999992\",\n  \"Nombre\": \"Desarrollador\",\n  \"Apellido\": \"Postman QA\",\n  \"Celular\": \"+573001112244\",\n  \"Correo\": \"desarrollador.postman.qa@example.com\",\n  \"FechaNacimiento\": \"2000-01-15\",\n  \"Id\": {{desarrolladorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Habilidades",
+      "description": "Pruebas CRUD de la entidad.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/habilidades",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/habilidades/{{habilidadId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección habilidadId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear habilidad",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/habilidades",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable habilidadId. Verifica que las claves foráneas referencien registros existentes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Nombre\": \"Habilidad Postman QA\",\n  \"Descripcion\": \"Habilidad de ejemplo para validar las operaciones CRUD.\",\n  \"IdCategoria\": {{categoriaId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"habilidadId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar habilidad",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/habilidades/{{habilidadId}}",
+            "description": "Elimina el registro indicado por habilidadId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar habilidad",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/habilidades",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Nombre\": \"Habilidad Postman QA\",\n  \"Descripcion\": \"Habilidad de ejemplo para validar las operaciones CRUD.\",\n  \"IdCategoria\": {{categoriaId}},\n  \"Id\": {{habilidadId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Perfiles profesionales",
+      "description": "Ejecuta primero POST - Crear desarrollador. El perfil tiene una relación 1:1 con el desarrollador; no uses uno que ya tenga perfil.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/perfilesprofesionales",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/perfilesprofesionales/{{perfilProfesionalId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección perfilProfesionalId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear perfil profesional",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/perfilesprofesionales",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable perfilProfesionalId. Ejecuta primero POST - Crear desarrollador. El perfil tiene una relación 1:1 con el desarrollador; no uses uno que ya tenga perfil.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdDesarrollador\": {{desarrolladorId}},\n  \"TituloProfesional\": \"Desarrollador de Software\",\n  \"Descripcion\": \"Perfil de ejemplo para pruebas de la API.\",\n  \"Pais\": \"Colombia\",\n  \"Ciudad\": \"Medellín\",\n  \"Modalidad\": \"REMOTO\",\n  \"GitHub\": \"https://github.com/ejemplo\",\n  \"LinkedIn\": \"https://www.linkedin.com/in/ejemplo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"perfilProfesionalId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar perfil profesional",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/perfilesprofesionales/{{perfilProfesionalId}}",
+            "description": "Elimina el registro indicado por perfilProfesionalId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar perfil profesional",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/perfilesprofesionales",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdDesarrollador\": {{desarrolladorId}},\n  \"TituloProfesional\": \"Desarrollador de Software\",\n  \"Descripcion\": \"Perfil de ejemplo para pruebas de la API.\",\n  \"Pais\": \"Colombia\",\n  \"Ciudad\": \"Medellín\",\n  \"Modalidad\": \"REMOTO\",\n  \"GitHub\": \"https://github.com/ejemplo\",\n  \"LinkedIn\": \"https://www.linkedin.com/in/ejemplo\",\n  \"Id\": {{perfilProfesionalId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Publicaciones",
+      "description": "Este ejemplo crea una publicación de empresa: IdCliente queda null. Requiere una empresa y categoría existentes.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publicaciones",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publicaciones/{{publicacionId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección publicacionId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear publicación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publicaciones",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable publicacionId. Este ejemplo crea una publicación de empresa: IdCliente queda null. Requiere una empresa y categoría existentes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdEmpresa\": {{empresaId}},\n  \"IdCliente\": null,\n  \"IdCategoria\": {{categoriaId}},\n  \"Titulo\": \"Desarrollador de Software - Prueba QA\",\n  \"Descripcion\": \"Publicación de ejemplo para probar el registro de oportunidades.\",\n  \"Tipo\": \"FREELANCE\",\n  \"Estado\": \"CREADA\",\n  \"FechaCreacion\": \"2026-10-30\",\n  \"FechaPublicacion\": null,\n  \"FechaVencimiento\": null,\n  \"Presupuesto\": 1500000.0,\n  \"Salario\": null,\n  \"Moneda\": \"COP\",\n  \"NivelExperiencia\": \"JUNIOR\",\n  \"TipoContrato\": null,\n  \"ModalidadTrabajo\": \"REMOTO\",\n  \"Pais\": \"Colombia\",\n  \"Ciudad\": \"Medellín\",\n  \"Plazo\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"publicacionId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar publicación",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/publicaciones/{{publicacionId}}",
+            "description": "Elimina el registro indicado por publicacionId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar publicación",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publicaciones",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdEmpresa\": {{empresaId}},\n  \"IdCliente\": null,\n  \"IdCategoria\": {{categoriaId}},\n  \"Titulo\": \"Desarrollador de Software - Prueba QA\",\n  \"Descripcion\": \"Publicación de ejemplo para probar el registro de oportunidades.\",\n  \"Tipo\": \"FREELANCE\",\n  \"Estado\": \"CREADA\",\n  \"FechaCreacion\": \"2026-10-30\",\n  \"FechaPublicacion\": null,\n  \"FechaVencimiento\": null,\n  \"Presupuesto\": 1500000.0,\n  \"Salario\": null,\n  \"Moneda\": \"COP\",\n  \"NivelExperiencia\": \"JUNIOR\",\n  \"TipoContrato\": null,\n  \"ModalidadTrabajo\": \"REMOTO\",\n  \"Pais\": \"Colombia\",\n  \"Ciudad\": \"Medellín\",\n  \"Plazo\": 30,\n  \"Id\": {{publicacionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Aplicaciones",
+      "description": "Requiere una publicación y un desarrollador existentes. La pareja publicación-desarrollador debe ser única; crea primero un desarrollador y una publicación de prueba.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/aplicaciones",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/aplicaciones/{{aplicacionId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección aplicacionId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear aplicación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/aplicaciones",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable aplicacionId. Requiere una publicación y un desarrollador existentes. La pareja publicación-desarrollador debe ser única; crea primero un desarrollador y una publicación de prueba.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPublicacion\": {{publicacionId}},\n  \"IdDesarrollador\": {{desarrolladorId}},\n  \"FechaAplicacion\": \"2026-10-30\",\n  \"Mensaje\": \"Me interesa esta oportunidad y considero que mi experiencia se ajusta a los requisitos.\",\n  \"Estado\": \"PENDIENTE\",\n  \"PlazoEstimado\": 30,\n  \"MontoPropuesto\": 1500000.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"aplicacionId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar aplicación",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/aplicaciones/{{aplicacionId}}",
+            "description": "Elimina el registro indicado por aplicacionId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar aplicación",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/aplicaciones?id={{aplicacionId}}",
+            "description": "El controlador de Aplicaciones recibe id como parámetro de consulta y la entidad completa en el body.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPublicacion\": {{publicacionId}},\n  \"IdDesarrollador\": {{desarrolladorId}},\n  \"FechaAplicacion\": \"2026-10-30\",\n  \"Mensaje\": \"Me interesa esta oportunidad y considero que mi experiencia se ajusta a los requisitos.\",\n  \"Estado\": \"PENDIENTE\",\n  \"PlazoEstimado\": 30,\n  \"MontoPropuesto\": 1500000.0,\n  \"Id\": {{aplicacionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Certificaciones",
+      "description": "Requiere un perfil profesional existente; ejecuta primero POST - Crear perfil profesional.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/certificaciones",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/certificaciones/{{certificacionId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección certificacionId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear certificación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/certificaciones",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable certificacionId. Requiere un perfil profesional existente; ejecuta primero POST - Crear perfil profesional.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPerfilProfesional\": {{perfilProfesionalId}},\n  \"Titulo\": \"Certificación de prueba Postman\",\n  \"Institucion\": \"Instituto de Pruebas\",\n  \"FechaEmision\": \"2025-05-15\",\n  \"FechaVencimiento\": null,\n  \"UrlCertificado\": \"https://example.com/certificado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"certificacionId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar certificación",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/certificaciones/{{certificacionId}}",
+            "description": "Elimina el registro indicado por certificacionId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar certificación",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/certificaciones",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPerfilProfesional\": {{perfilProfesionalId}},\n  \"Titulo\": \"Certificación de prueba Postman\",\n  \"Institucion\": \"Instituto de Pruebas\",\n  \"FechaEmision\": \"2025-05-15\",\n  \"FechaVencimiento\": null,\n  \"UrlCertificado\": \"https://example.com/certificado\",\n  \"Id\": {{certificacionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Educación",
+      "description": "Requiere un perfil profesional existente; ejecuta primero POST - Crear perfil profesional.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/educacion",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/educacion/{{educacionId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección educacionId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear registro de educación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/educacion",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable educacionId. Requiere un perfil profesional existente; ejecuta primero POST - Crear perfil profesional.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPerfilProfesional\": {{perfilProfesionalId}},\n  \"NivelEducativo\": \"Tecnólogo\",\n  \"Institucion\": \"Instituto de Prueba\",\n  \"Titulo\": \"Tecnología en Desarrollo de Software\",\n  \"FechaInicio\": \"2022-01-15\",\n  \"FechaFin\": \"2025-11-30\",\n  \"EnCurso\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"educacionId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar registro de educación",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/educacion/{{educacionId}}",
+            "description": "Elimina el registro indicado por educacionId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar registro de educación",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/educacion",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPerfilProfesional\": {{perfilProfesionalId}},\n  \"NivelEducativo\": \"Tecnólogo\",\n  \"Institucion\": \"Instituto de Prueba\",\n  \"Titulo\": \"Tecnología en Desarrollo de Software\",\n  \"FechaInicio\": \"2022-01-15\",\n  \"FechaFin\": \"2025-11-30\",\n  \"EnCurso\": false,\n  \"Id\": {{educacionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Experiencias",
+      "description": "Requiere un perfil profesional existente; ejecuta primero POST - Crear perfil profesional.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/experiencias",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/experiencias/{{experienciaId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección experienciaId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear experiencia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/experiencias",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable experienciaId. Requiere un perfil profesional existente; ejecuta primero POST - Crear perfil profesional.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPerfilProfesional\": {{perfilProfesionalId}},\n  \"Empresa\": \"Empresa de Prueba\",\n  \"Cargo\": \"Desarrollador de Software Junior\",\n  \"Descripcion\": \"Experiencia de ejemplo creada para validar el endpoint.\",\n  \"FechaInicio\": \"2023-01-01\",\n  \"FechaFin\": null,\n  \"EstadoActual\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"experienciaId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar experiencia",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/experiencias/{{experienciaId}}",
+            "description": "Elimina el registro indicado por experienciaId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar experiencia",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/experiencias",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPerfilProfesional\": {{perfilProfesionalId}},\n  \"Empresa\": \"Empresa de Prueba\",\n  \"Cargo\": \"Desarrollador de Software Junior\",\n  \"Descripcion\": \"Experiencia de ejemplo creada para validar el endpoint.\",\n  \"FechaInicio\": \"2023-01-01\",\n  \"FechaFin\": null,\n  \"EstadoActual\": true,\n  \"Id\": {{experienciaId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Perfiles_Habilidades",
+      "description": "Requiere un perfil y una habilidad existentes. La combinación de ambas claves debe ser única.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/perfiles_habilidades",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/perfiles_habilidades/{{perfilHabilidadId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección perfilHabilidadId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear relación perfil-habilidad",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/perfiles_habilidades",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable perfilHabilidadId. Requiere un perfil y una habilidad existentes. La combinación de ambas claves debe ser única.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPerfilProfesional\": {{perfilProfesionalId}},\n  \"IdHabilidad\": {{habilidadId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"perfilHabilidadId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar relación perfil-habilidad",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/perfiles_habilidades/{{perfilHabilidadId}}",
+            "description": "Elimina el registro indicado por perfilHabilidadId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar relación perfil-habilidad",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/perfiles_habilidades",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPerfilProfesional\": {{perfilProfesionalId}},\n  \"IdHabilidad\": {{habilidadId}},\n  \"Id\": {{perfilHabilidadId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Publicaciones_Habilidades",
+      "description": "Requiere una publicación y una habilidad existentes. La combinación de ambas claves debe ser única.",
+      "item": [
+        {
+          "name": "GET - Obtener todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publicaciones_habilidades",
+            "description": "Consulta todos los registros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET - Obtener Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publicaciones_habilidades/{{publicacionHabilidadId}}",
+            "description": "Consulta el registro cuyo identificador está en la variable de colección publicacionHabilidadId. Valor inicial: 1; cambia ese valor si es necesario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST - Crear relación publicación-habilidad",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publicaciones_habilidades",
+            "description": "Crea un registro de ejemplo. La prueba guarda automáticamente el Id de la respuesta en la variable publicacionHabilidadId. Requiere una publicación y una habilidad existentes. La combinación de ambas claves debe ser única.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPublicacion\": {{publicacionId}},\n  \"IdHabilidad\": {{habilidadId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    const createdId = responseData.id ?? responseData.Id;",
+                  "    pm.expect(createdId, \"La respuesta debe incluir el Id creado\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"publicacionHabilidadId\", String(createdId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE - Eliminar relación publicación-habilidad",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/publicaciones_habilidades/{{publicacionHabilidadId}}",
+            "description": "Elimina el registro indicado por publicacionHabilidadId. Esta operación modifica la base de datos; úsala únicamente cuando quieras borrar el registro de prueba."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT - Actualizar relación publicación-habilidad",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publicaciones_habilidades",
+            "description": "El controlador recibe la entidad completa en el body; el Id del body identifica el registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IdPublicacion\": {{publicacionId}},\n  \"IdHabilidad\": {{habilidadId}},\n  \"Id\": {{publicacionHabilidadId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://localhost:7000",
+      "type": "string"
+    },
+    {
+      "key": "aplicacionId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "categoriaId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "certificacionId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "clienteId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "desarrolladorId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "educacionId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "empresaId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "experienciaId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "habilidadId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "perfilProfesionalId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "perfilHabilidadId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "publicacionId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "publicacionHabilidadId",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

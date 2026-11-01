@@ -195,8 +195,8 @@ Cada recurso tiene estos endpoints:
 
 | Integrante | Aporte |
 |---|---|
-| Jordan del Aguila | Repositorio e integración de Pull Requests. Corrección de validaciones decimales. Módulo de Desarrolladores (registro por pasos, perfil completo y endpoints transaccionales). |
-| Brayan Andrés Florez | DataContext, migraciones y SeedDb. Controladores con paginación, validaciones y reglas de negocio. Front de Inicio, Publicaciones, Aplicaciones, Empresas, Clientes, Habilidades, Categorías, Administradores y tablas N:M. Eliminación y desactivación de desarrolladores. Pruebas y documentación. |
+| Jordan del Aguila | Repositorio e integración de Pull Requests. Corrección de validaciones decimales. Controladores y entidades. Módulo de Desarrolladores (registro por pasos, perfil completo y endpoints transaccionales). documentación. |
+| Brayan Andrés Florez | DataContext, migraciones y SeedDb. Controladores con paginación, validaciones y reglas de negocio. Front de Inicio, Publicaciones, Aplicaciones, Empresas, Clientes, Habilidades, Categorías, Administradores y tablas N:M. Eliminación y desactivación de desarrolladores. Pruebas |
 
 
 ## Fuera del alcance de esta entrega

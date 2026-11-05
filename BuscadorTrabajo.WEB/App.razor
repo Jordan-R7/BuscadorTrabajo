@@ -1,6 +1,37 @@
 ﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+        @* AuthorizeRouteView revisa el [Authorize] de cada página antes de mostrarla *@
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <Authorizing>
+                <div class="bt-loading-card">
+                    <div class="bt-spinner"></div>
+                    <p>Verificando tu sesión...</p>
+                </div>
+            </Authorizing>
+            <NotAuthorized>
+                @if (context.User.Identity?.IsAuthenticated != true)
+                {
+                    <div class="bt-auth-card bt-auth-aviso">
+                        <h1 class="bt-title">Inicia sesión para continuar</h1>
+                        <p class="bt-subtitle">Esta sección es solo para usuarios registrados.</p>
+                        <div class="bt-form-actions">
+                            <a class="bt-btn bt-btn-ghost" href="/Register">Crear cuenta</a>
+                            <a class="bt-btn bt-btn-primary" href="/Login">Iniciar sesión</a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="bt-auth-card bt-auth-aviso">
+                        <h1 class="bt-title">No tienes permiso</h1>
+                        <p class="bt-subtitle">Tu tipo de cuenta no puede entrar a esta sección.</p>
+                        <div class="bt-form-actions">
+                            <a class="bt-btn bt-btn-primary" href="/">Volver al inicio</a>
+                        </div>
+                    </div>
+                }
+            </NotAuthorized>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
 </Router>

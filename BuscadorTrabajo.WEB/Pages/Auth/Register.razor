@@ -1,0 +1,240 @@
+@page "/Register"
+@inject IRepository repository
+@inject SweetAlertService swal
+@inject NavigationManager navigationManager
+@inject ILoginService loginService
+
+<PageTitle>Crear cuenta | SkillNet</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">@(tipoElegido ? $"Crear cuenta de {NombreTipo}" : "Crear cuenta")</h1>
+            <p class="bt-subtitle">@(tipoElegido ? "Completa tus datos para crear la cuenta." : "¿Qué tipo de cuenta quieres crear?")</p>
+        </div>
+    </div>
+
+    @if (!tipoElegido)
+    {
+        @* Paso 1: elegir qué tipo de cuenta se va a crear *@
+        <div class="bt-tipo-cuenta-grid">
+            <button type="button" class="bt-tipo-cuenta" @onclick="() => ElegirTipo(UserType.Empresa)">
+                <span class="bt-tipo-cuenta-icono">▦</span>
+                <strong>Empresa</strong>
+                <span>Publica ofertas de empleo y solicitudes de servicio, y revisa a quienes aplican.</span>
+            </button>
+            <button type="button" class="bt-tipo-cuenta" @onclick="() => ElegirTipo(UserType.Cliente)">
+                <span class="bt-tipo-cuenta-icono">☺</span>
+                <strong>Cliente</strong>
+                <span>Persona que necesita un desarrollo y publica solicitudes de servicio.</span>
+            </button>
+            <button type="button" class="bt-tipo-cuenta" @onclick="() => ElegirTipo(UserType.Desarrollador)">
+                <span class="bt-tipo-cuenta-icono">&lt;/&gt;</span>
+                <strong>Desarrollador</strong>
+                <span>Crea tu perfil profesional y aplica a empleos y servicios.</span>
+            </button>
+            @if (esAdmin)
+            {
+                <button type="button" class="bt-tipo-cuenta" @onclick="() => ElegirTipo(UserType.Admin)">
+                    <span class="bt-tipo-cuenta-icono">⚙</span>
+                    <strong>Administrador</strong>
+                    <span>Gestiona todo el sistema. Solo un administrador puede crear esta cuenta.</span>
+                </button>
+            }
+        </div>
+
+        <p class="bt-auth-alt">¿Ya tienes cuenta? <a href="/Login">Iniciar sesión</a></p>
+    }
+    else
+    {
+    <button type="button" class="bt-back bt-back-btn" @onclick="CambiarTipo">‹ Cambiar tipo de cuenta</button>
+    <p class="bt-hint">@DescripcionTipo</p>
+
+    <div class="bt-form-card">
+        <EditForm Model="registro" OnValidSubmit="CreateUserAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            @if (registro.TipoUsuario == UserType.Empresa)
+            {
+                <div class="bt-form-section">
+                    <h2 class="bt-form-section-title">Datos de la empresa</h2>
+                    <div class="bt-form-grid">
+                        <div class="bt-field">
+                            <label class="bt-label">Nombre de la empresa</label>
+                            <InputText class="form-control" @bind-Value="registro.NombreEmpresa" />
+                            <ValidationMessage For="@(() => registro.NombreEmpresa)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">NIT</label>
+                            <InputText class="form-control" @bind-Value="registro.NIT" placeholder="900123456-7" />
+                            <ValidationMessage For="@(() => registro.NIT)" />
+                        </div>
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Descripción</label>
+                            <InputTextArea class="form-control" rows="3" @bind-Value="registro.Descripcion" placeholder="¿A qué se dedica la empresa?" />
+                            <ValidationMessage For="@(() => registro.Descripcion)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">País</label>
+                            <InputText class="form-control" @bind-Value="registro.Pais" />
+                            <ValidationMessage For="@(() => registro.Pais)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Ciudad</label>
+                            <InputText class="form-control" @bind-Value="registro.Ciudad" />
+                            <ValidationMessage For="@(() => registro.Ciudad)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Dirección</label>
+                            <InputText class="form-control" @bind-Value="registro.Direccion" />
+                            <ValidationMessage For="@(() => registro.Direccion)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Sitio web (opcional)</label>
+                            <InputText class="form-control" @bind-Value="registro.SitioWeb" placeholder="https://..." />
+                            <ValidationMessage For="@(() => registro.SitioWeb)" />
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="bt-form-section">
+                    <h2 class="bt-form-section-title">Datos personales</h2>
+                    <div class="bt-form-grid">
+                        <div class="bt-field">
+                            <label class="bt-label">Nombre</label>
+                            <InputText class="form-control" @bind-Value="registro.Nombre" />
+                            <ValidationMessage For="@(() => registro.Nombre)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Apellido</label>
+                            <InputText class="form-control" @bind-Value="registro.Apellido" />
+                            <ValidationMessage For="@(() => registro.Apellido)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Cédula</label>
+                            <InputText class="form-control" @bind-Value="registro.Cedula" maxlength="10" />
+                            <ValidationMessage For="@(() => registro.Cedula)" />
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="bt-form-section">
+                <h2 class="bt-form-section-title">Datos de acceso</h2>
+                <div class="bt-form-grid">
+                    <div class="bt-field">
+                        <label class="bt-label">Correo</label>
+                        <InputText class="form-control" type="email" @bind-Value="registro.Email" placeholder="nombre@correo.com" />
+                        <ValidationMessage For="@(() => registro.Email)" />
+                    </div>
+                    <div class="bt-field">
+                        <label class="bt-label">Celular</label>
+                        <InputText class="form-control" type="tel" @bind-Value="registro.Celular" placeholder="3001234567" />
+                        <ValidationMessage For="@(() => registro.Celular)" />
+                    </div>
+                    <div class="bt-field">
+                        <label class="bt-label">Contraseña</label>
+                        <InputText class="form-control" type="password" @bind-Value="registro.Password" />
+                        <ValidationMessage For="@(() => registro.Password)" />
+                    </div>
+                    <div class="bt-field">
+                        <label class="bt-label">Confirmación de contraseña</label>
+                        <InputText class="form-control" type="password" @bind-Value="registro.PasswordConfirm" />
+                        <ValidationMessage For="@(() => registro.PasswordConfirm)" />
+                    </div>
+                </div>
+                <p class="bt-hint">La contraseña debe tener al menos 6 caracteres.</p>
+            </div>
+
+            <div class="bt-form-actions">
+                <a class="bt-btn bt-btn-ghost" href="/Login">Ya tengo cuenta</a>
+                <button class="bt-btn bt-btn-primary" type="submit" disabled="@enviando">
+                    @(enviando ? "Creando..." : "Crear cuenta")
+                </button>
+            </div>
+        </EditForm>
+    </div>
+    }
+</div>
+
+@code {
+    private RegistroUsuarioDTO registro = new();
+    private bool enviando;
+    private bool esAdmin;
+
+    // false = se está eligiendo el tipo de cuenta; true = se muestra el formulario de ese tipo
+    private bool tipoElegido;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var estado = await authenticationStateTask;
+        esAdmin = estado.User.IsInRole("Admin");
+    }
+
+    private string DescripcionTipo => registro.TipoUsuario switch
+    {
+        UserType.Empresa => "Cuenta de empresa: publica ofertas de empleo y solicitudes de servicio.",
+        UserType.Cliente => "Cuenta de cliente: persona que publica solicitudes de servicio.",
+        UserType.Admin => "Cuenta de administrador: gestiona todo el sistema.",
+        _ => ""
+    };
+
+    private string NombreTipo => registro.TipoUsuario switch
+    {
+        UserType.Empresa => "empresa",
+        UserType.Cliente => "cliente",
+        UserType.Admin => "administrador",
+        _ => ""
+    };
+
+    // Paso 1 -> paso 2. El desarrollador tiene su propio registro de varios pasos (con su perfil profesional).
+    private void ElegirTipo(UserType tipo)
+    {
+        if (tipo == UserType.Desarrollador)
+        {
+            navigationManager.NavigateTo("/desarrolladores/registro");
+            return;
+        }
+
+        registro = new() { TipoUsuario = tipo, Pais = "Colombia" };
+        tipoElegido = true;
+    }
+
+    private void CambiarTipo()
+    {
+        tipoElegido = false;
+    }
+
+    // POST /api/accounts/CreateUser -> crea la cuenta y su registro (empresa, cliente o administrador)
+    private async Task CreateUserAsync()
+    {
+        enviando = true;
+        var responseHttp = await repository.PostAsync<RegistroUsuarioDTO, TokenDTO>("/api/accounts/CreateUser", registro);
+        enviando = false;
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        // Si un administrador creó la cuenta de otra persona, él sigue con su propia sesión
+        if (esAdmin)
+        {
+            await swal.FireAsync("Cuenta creada", $"La cuenta {registro.Email} quedó creada.", SweetAlertIcon.Success);
+            registro = new() { TipoUsuario = registro.TipoUsuario, Pais = "Colombia" };
+            return;
+        }
+
+        await loginService.LoginAsync(responseHttp.Response!.Token);
+        await swal.FireAsync("¡Bienvenido!", "Tu cuenta quedó creada y ya iniciaste sesión.", SweetAlertIcon.Success);
+        navigationManager.NavigateTo("/");
+    }
+}

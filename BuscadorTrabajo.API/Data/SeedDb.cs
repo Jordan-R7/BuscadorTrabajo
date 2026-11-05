@@ -1,4 +1,6 @@
-﻿using BuscadorTrabajo.Shared.Entities;
+﻿using BuscadorTrabajo.API.Helpers;
+using BuscadorTrabajo.Shared.Entities;
+using BuscadorTrabajo.Shared.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace BuscadorTrabajo.API.Data
@@ -11,16 +13,24 @@ namespace BuscadorTrabajo.API.Data
     public class SeedDb
     {
         private readonly DataContext _context;
+        private readonly IUserHelper _userHelper;
 
-        public SeedDb(DataContext context)
+        // Contraseña de las cuentas de demostración (solo para pruebas)
+        private const string ClaveDemo = "123456";
+
+        public SeedDb(DataContext context, IUserHelper userHelper)
         {
             _context = context;
+            _userHelper = userHelper;
         }
 
         public async Task SeedDbAsync()
         {
             // Aplica las migraciones pendientes (si la base no existe, la crea).
             await _context.Database.MigrateAsync();
+
+            // Los 4 roles del sistema
+            await CheckRolesAsync();
 
             // El orden importa: primero las tablas "padre" y luego las que dependen de ellas.
             await CheckAdministradoresAsync();
@@ -37,6 +47,107 @@ namespace BuscadorTrabajo.API.Data
             await CheckPublicacionesAsync();
             await CheckPublicacionesHabilidadesAsync();
             await CheckAplicacionesAsync();
+            await CheckPreguntasAsync();
+
+            // Una cuenta de demostración por rol, vinculada a un registro ya creado
+            await CheckUsuariosAsync();
+        }
+
+        // ---------- Roles (Admin, Desarrollador, Empresa, Cliente) ----------
+        private async Task CheckRolesAsync()
+        {
+            foreach (var rol in Enum.GetNames<UserType>())
+            {
+                await _userHelper.CheckRoleAsync(rol);
+            }
+        }
+
+        // ---------- Cuentas de demostración ----------
+        // Correo = el correo del registro; contraseña = 123456
+        private async Task CheckUsuariosAsync()
+        {
+            var administrador = await _context.Administradores.FirstOrDefaultAsync(x => x.Cedula == "1000000001");
+            if (administrador != null && administrador.UserId == null)
+            {
+                administrador.UserId = await CrearUsuarioAsync(administrador.Correo, administrador.Nombre, administrador.Apellido, administrador.Celular, UserType.Admin);
+            }
+
+            var empresa = await _context.Empresas.FirstOrDefaultAsync(x => x.NIT == "900100001-1");
+            if (empresa != null && empresa.UserId == null)
+            {
+                empresa.UserId = await CrearUsuarioAsync(empresa.Correo, empresa.Nombre, null, empresa.Celular, UserType.Empresa);
+            }
+
+            var cliente = await _context.Clientes.FirstOrDefaultAsync(x => x.Cedula == "1030000003");
+            if (cliente != null && cliente.UserId == null)
+            {
+                cliente.UserId = await CrearUsuarioAsync(cliente.Correo, cliente.Nombre, cliente.Apellido, cliente.Celular, UserType.Cliente);
+            }
+
+            var desarrollador = await _context.Desarrolladores.FirstOrDefaultAsync(x => x.Cedula == "1020000001");
+            if (desarrollador != null && desarrollador.UserId == null)
+            {
+                desarrollador.UserId = await CrearUsuarioAsync(desarrollador.Correo, desarrollador.Nombre, desarrollador.Apellido, desarrollador.Celular, UserType.Desarrollador);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        // Crea el usuario con su rol (si ya existe, lo reutiliza) y devuelve su Id
+        private async Task<string> CrearUsuarioAsync(string correo, string nombre, string apellido, string celular, UserType tipo)
+        {
+            correo = correo.Trim().ToLower();
+            var user = await _userHelper.GetUserAsync(correo);
+            if (user == null)
+            {
+                user = new User
+                {
+                    Email = correo,
+                    UserName = correo,
+                    EmailConfirmed = true,
+                    PhoneNumber = celular,
+                    Nombre = nombre,
+                    Apellido = apellido,
+                    TipoUsuario = tipo
+                };
+
+                var resultado = await _userHelper.AddUserAsync(user, ClaveDemo);
+                if (!resultado.Succeeded)
+                {
+                    throw new InvalidOperationException($"No se pudo crear el usuario {correo}: {resultado.Errors.FirstOrDefault()?.Description}");
+                }
+
+                await _userHelper.AddUserToRoleAsync(user, tipo.ToString());
+            }
+
+            return user.Id;
+        }
+
+        // ---------- Preguntas de una publicación sin aplicaciones (RN50) ----------
+        private async Task CheckPreguntasAsync()
+        {
+            if (!await _context.Preguntas.AnyAsync())
+            {
+                var idPublicacion = await _context.Publicaciones
+                    .Where(x => x.Titulo == "Base de datos para inventario")
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync();
+                if (idPublicacion == 0)
+                {
+                    return;
+                }
+
+                _context.Preguntas.AddRange(
+                    new Pregunta { IdPublicacion = idPublicacion, Orden = 1, Obligatoria = true, TipoRespuesta = "SI_NO",
+                        Texto = "¿Has diseñado bases de datos relacionales antes?" },
+                    new Pregunta { IdPublicacion = idPublicacion, Orden = 2, Obligatoria = true, TipoRespuesta = "NUMERO",
+                        Texto = "¿Cuántos años de experiencia tienes con SQL?" },
+                    new Pregunta { IdPublicacion = idPublicacion, Orden = 3, Obligatoria = true, TipoRespuesta = "OPCION_UNICA",
+                        Texto = "¿Qué motor de base de datos propones?", Opciones = "SQL Server;MySQL;PostgreSQL" },
+                    new Pregunta { IdPublicacion = idPublicacion, Orden = 4, Obligatoria = false, TipoRespuesta = "TEXTO",
+                        Texto = "Cuéntanos de un proyecto parecido que hayas hecho." });
+                await _context.SaveChangesAsync();
+            }
         }
 
         // ---------- Administrador inicial (RN06) ----------

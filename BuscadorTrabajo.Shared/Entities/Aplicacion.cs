@@ -51,6 +51,11 @@ namespace BuscadorTrabajo.Shared.Entities
         public decimal? MontoPropuesto { get; set; }
 
 
+        // Respuestas a las preguntas de la publicación (RN52-RN56).
+        // Llegan junto con la aplicación y se guardan en la misma operación.
+        public List<Respuesta> Respuestas { get; set; }
+
+
 
 
 

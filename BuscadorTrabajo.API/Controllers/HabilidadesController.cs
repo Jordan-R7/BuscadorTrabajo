@@ -1,6 +1,8 @@
 ﻿using BuscadorTrabajo.API.Data;
 using BuscadorTrabajo.API.Helpers;
 using BuscadorTrabajo.Shared.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +10,7 @@ namespace BuscadorTrabajo.API.Controllers
 {
     [ApiController]
     [Route("/api/habilidades")]
+    // Consultar (GET) es público; crear, editar y borrar requiere iniciar sesión con rol Admin
     public class HabilidadesController : ControllerBase
     {
         private readonly DataContext _context;
@@ -75,6 +78,8 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // POST /api/habilidades
+        // Crear habilidades queda abierto: el asistente de registro de desarrollador permite
+        // agregar una habilidad que no exista, y en ese momento la persona aún no tiene cuenta.
         [HttpPost]
         public async Task<ActionResult> Post(Habilidad habilidad)
         {
@@ -99,6 +104,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // PUT /api/habilidades
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpPut]
         public async Task<ActionResult> Put(Habilidad habilidad)
         {
@@ -127,6 +133,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // DELETE /api/habilidades/5
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {

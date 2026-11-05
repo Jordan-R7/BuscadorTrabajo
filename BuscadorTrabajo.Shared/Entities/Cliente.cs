@@ -35,6 +35,11 @@ namespace BuscadorTrabajo.Shared.Entities
         [MaxLength(300, ErrorMessage = "El Correo no puede tener más de 300 caracteres")]
         public string Correo { get; set; }
 
+        // Usuario (cuenta de acceso) al que pertenece este registro.
+        // Puede ir vacío en registros creados por un administrador sin cuenta.
+        [MaxLength(450)]
+        public string UserId { get; set; }
+
 
 
     }

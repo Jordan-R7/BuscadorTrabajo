@@ -1,6 +1,8 @@
 ﻿using BuscadorTrabajo.API.Data;
 using BuscadorTrabajo.API.Helpers;
 using BuscadorTrabajo.Shared.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +10,8 @@ namespace BuscadorTrabajo.API.Controllers
 {
     [ApiController]
     [Route("/api/experiencias")]
+    // Solo usuarios con sesión iniciada (token JWT)
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ExperienciasController : ControllerBase
     {
         private readonly DataContext _context;

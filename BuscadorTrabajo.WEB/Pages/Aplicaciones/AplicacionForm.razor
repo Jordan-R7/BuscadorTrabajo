@@ -38,8 +38,9 @@
 
                 <div class="bt-field bt-field-full">
                     <label class="bt-label">Desarrollador</label>
-                    @if (EsEdicion)
+                    @if (EsEdicion || idDesarrolladorConectado > 0)
                     {
+                        @* Un desarrollador conectado siempre aplica como él mismo *@
                         <div class="bt-readonly">@NombreDesarrollador(Aplicacion.IdDesarrollador)</div>
                     }
                     else
@@ -64,7 +65,7 @@
             <div class="bt-form-grid">
                 <div class="bt-field bt-field-full">
                     <label class="bt-label">Mensaje (opcional)</label>
-                    <InputTextArea class="form-control" rows="3" @bind-Value="Aplicacion.Mensaje" placeholder="Cuéntale a la empresa o al cliente por qué eres buena opción" />
+                    <InputTextArea class="form-control" rows="3" disabled="@SoloEstado" @bind-Value="Aplicacion.Mensaje" placeholder="Cuéntale a la empresa o al cliente por qué eres buena opción" />
                     <ValidationMessage For="@(() => Aplicacion.Mensaje)" />
                 </div>
 
@@ -72,13 +73,13 @@
                 {
                     <div class="bt-field">
                         <label class="bt-label">Monto propuesto (@(PublicacionSeleccionada?.Moneda ?? "COP"))</label>
-                        <InputNumber class="form-control" @bind-Value="Aplicacion.MontoPropuesto" placeholder="Ej: 2000000" />
+                        <InputNumber class="form-control" disabled="@SoloEstado" @bind-Value="Aplicacion.MontoPropuesto" placeholder="Ej: 2000000" />
                         <ValidationMessage For="@(() => Aplicacion.MontoPropuesto)" />
                     </div>
 
                     <div class="bt-field">
                         <label class="bt-label">Plazo estimado (días)</label>
-                        <InputNumber class="form-control" @bind-Value="Aplicacion.PlazoEstimado" placeholder="Ej: 30" />
+                        <InputNumber class="form-control" disabled="@SoloEstado" @bind-Value="Aplicacion.PlazoEstimado" placeholder="Ej: 30" />
                         <ValidationMessage For="@(() => Aplicacion.PlazoEstimado)" />
                     </div>
                     <p class="bt-hint bt-field-full">En una solicitud de servicio el monto y el plazo son obligatorios.</p>
@@ -89,6 +90,64 @@
                 }
             </div>
         </div>
+
+        @* ---------- Preguntas de la publicación (RN52 a RN56) ---------- *@
+        @if (!EsEdicion && preguntas.Count > 0)
+        {
+            <div class="bt-form-section">
+                <h2 class="bt-form-section-title">Preguntas del publicador</h2>
+                <div class="bt-form-grid">
+                    @foreach (var pregunta in preguntas)
+                    {
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">@(pregunta.Orden). @pregunta.Texto @(pregunta.Obligatoria ? "*" : "(opcional)")</label>
+                            @switch (pregunta.TipoRespuesta)
+                            {
+                                case "SI_NO":
+                                    <select class="form-select" @bind="valores[pregunta.Id]">
+                                        <option value="">Selecciona</option>
+                                        <option value="SI">Sí</option>
+                                        <option value="NO">No</option>
+                                    </select>
+                                    break;
+                                case "NUMERO":
+                                    <input class="form-control" type="number" step="any" @bind="valores[pregunta.Id]" />
+                                    break;
+                                case "OPCION_UNICA":
+                                    <select class="form-select" @bind="valores[pregunta.Id]">
+                                        <option value="">Selecciona una opción</option>
+                                        @foreach (var opcion in pregunta.ListaOpciones())
+                                        {
+                                            <option value="@opcion">@opcion</option>
+                                        }
+                                    </select>
+                                    break;
+                                default:
+                                    <textarea class="form-control" rows="2" maxlength="1000" @bind="valores[pregunta.Id]"></textarea>
+                                    break;
+                            }
+                        </div>
+                    }
+                </div>
+                <p class="bt-hint">Las preguntas con * son obligatorias.</p>
+            </div>
+        }
+
+        @if (EsEdicion && respuestasGuardadas.Count > 0)
+        {
+            <div class="bt-form-section">
+                <h2 class="bt-form-section-title">Respuestas enviadas</h2>
+                <div class="bt-detail-grid">
+                    @foreach (var respuesta in respuestasGuardadas)
+                    {
+                        <div class="bt-detail-item bt-detail-item-full">
+                            <span>@respuesta.Pregunta</span>
+                            <strong>@respuesta.Valor</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
 
         @* ---------- Estado (solo al editar) ---------- *@
         @if (EsEdicion)
@@ -121,6 +180,28 @@
     private EditContext editContext = null!;
 
     private List<Publicacion> publicaciones = new();
+
+    // Preguntas de la publicación elegida y lo que el desarrollador va respondiendo (Id pregunta -> valor)
+    private List<Pregunta> preguntas = new();
+    private Dictionary<int, string> valores = new();
+    private List<RespuestaVista> respuestasGuardadas = new();
+
+    // Id del desarrollador conectado (0 si quien aplica es un administrador)
+    private int idDesarrolladorConectado;
+
+    // Rol del usuario: define a qué estados puede pasar la aplicación
+    private bool esDesarrollador;
+    private bool esAdmin;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    // Respuesta tal como la devuelve GET /api/respuestas?aplicacion=5
+    private class RespuestaVista
+    {
+        public string Pregunta { get; set; }
+        public string Valor { get; set; }
+    }
     private List<Desarrollador> desarrolladores = new();
     private HashSet<int> desarrolladoresConPerfil = new();
 
@@ -154,6 +235,9 @@
 
     private bool EsEdicion => !string.IsNullOrEmpty(EstadoOriginal);
 
+    // La empresa o el cliente que revisa una aplicación solo cambia su estado, no la propuesta
+    private bool SoloEstado => EsEdicion && !esAdmin && !esDesarrollador;
+
     private Publicacion PublicacionSeleccionada => publicaciones.FirstOrDefault(p => p.Id == Aplicacion.IdPublicacion);
 
     private bool EsServicio => PublicacionSeleccionada?.Tipo == "SERVICIO";
@@ -184,6 +268,45 @@
         publicaciones = respuestaPublicaciones.Response.OrderBy(p => p.Titulo).ToList();
         desarrolladores = respuestaDesarrolladores.Response.OrderBy(d => d.Nombre).ToList();
         desarrolladoresConPerfil = respuestaPerfiles.Response.Select(p => p.IdDesarrollador).ToHashSet();
+
+        // Si quien entra es un desarrollador, aplica como él mismo (su Id viene en el token)
+        var usuario = (await authenticationStateTask).User;
+        esDesarrollador = usuario.IsInRole("Desarrollador");
+        esAdmin = usuario.IsInRole("Admin");
+        if (!EsEdicion && usuario.IsInRole("Desarrollador")
+            && int.TryParse(usuario.FindFirst("IdRegistro")?.Value, out var idRegistro) && idRegistro > 0)
+        {
+            idDesarrolladorConectado = idRegistro;
+            Aplicacion.IdDesarrollador = idRegistro;
+        }
+
+        if (EsEdicion)
+        {
+            var respuestaRespuestas = await repository.GetAsync<List<RespuestaVista>>($"/api/respuestas?aplicacion={Aplicacion.Id}");
+            respuestasGuardadas = respuestaRespuestas.Error ? new() : respuestaRespuestas.Response;
+        }
+        else
+        {
+            await CargarPreguntasAsync();
+        }
+    }
+
+    // GET /api/preguntas?publicacion=5  ->  preguntas que se responden al aplicar
+    private async Task CargarPreguntasAsync()
+    {
+        preguntas = new();
+        valores = new();
+        if (Aplicacion.IdPublicacion <= 0)
+        {
+            return;
+        }
+
+        var respuesta = await repository.GetAsync<List<Pregunta>>($"/api/preguntas?publicacion={Aplicacion.IdPublicacion}");
+        if (!respuesta.Error)
+        {
+            preguntas = respuesta.Response.OrderBy(p => p.Orden).ToList();
+            valores = preguntas.ToDictionary(p => p.Id, p => "");
+        }
     }
 
     // Solo se puede aplicar a publicaciones PUBLICADA y sin vencer (RN26)
@@ -209,17 +332,30 @@
     private IEnumerable<string> EstadosDisponibles()
     {
         var siguientes = transiciones.TryGetValue(EstadoOriginal, out var lista) ? lista : new string[0];
+
+        // El desarrollador solo puede retirar su aplicación; la empresa o el cliente
+        // la revisan, aceptan o rechazan; el administrador puede hacer cualquier cambio permitido
+        if (!esAdmin)
+        {
+            siguientes = esDesarrollador
+                ? siguientes.Where(e => e == "RETIRADA").ToArray()
+                : siguientes.Where(e => e != "RETIRADA").ToArray();
+        }
+
         return new[] { EstadoOriginal }.Concat(siguientes);
     }
 
-    // Si la publicación elegida es un empleo, se limpian monto y plazo (RN30)
-    private void AlCambiarPublicacion()
+    // Si la publicación elegida es un empleo, se limpian monto y plazo (RN30),
+    // y se cargan las preguntas de la nueva publicación
+    private async Task AlCambiarPublicacion()
     {
         if (!EsServicio)
         {
             Aplicacion.MontoPropuesto = null;
             Aplicacion.PlazoEstimado = null;
         }
+
+        await CargarPreguntasAsync();
     }
 
     private async Task EnviarAsync()
@@ -239,6 +375,22 @@
         if (string.IsNullOrWhiteSpace(Aplicacion.Mensaje))
         {
             Aplicacion.Mensaje = null;
+        }
+
+        if (!EsEdicion)
+        {
+            // RN55: antes de enviar se revisa que estén las preguntas obligatorias (el API lo vuelve a revisar)
+            var faltante = preguntas.FirstOrDefault(p => p.Obligatoria && string.IsNullOrWhiteSpace(valores.GetValueOrDefault(p.Id)));
+            if (faltante != null)
+            {
+                await swal.FireAsync("Falta una respuesta", $"Responde la pregunta obligatoria: {faltante.Texto}", SweetAlertIcon.Warning);
+                return;
+            }
+
+            Aplicacion.Respuestas = preguntas
+                .Where(p => !string.IsNullOrWhiteSpace(valores.GetValueOrDefault(p.Id)))
+                .Select(p => new Respuesta { IdPregunta = p.Id, Valor = valores[p.Id].Trim() })
+                .ToList();
         }
 
         await OnSubmit.InvokeAsync();

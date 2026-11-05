@@ -1,0 +1,349 @@
+﻿@page "/cuenta"
+@attribute [Authorize]
+@inject IRepository repository
+@inject SweetAlertService swal
+@inject ILoginService loginService
+@inject NavigationManager navigationManager
+@inject HttpClient http
+
+<PageTitle>Mi cuenta | SkillNet</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Mi cuenta</h1>
+            <p class="bt-subtitle">Revisa tus datos y cambia tu contraseña.</p>
+        </div>
+    </div>
+
+    @if (cuenta is null)
+    {
+        <div class="bt-loading-card">
+            <div class="bt-spinner"></div>
+            <p>Cargando tu cuenta...</p>
+        </div>
+    }
+    else
+    {
+        @* ---------- Foto de perfil, como en WhatsApp ---------- *@
+        <div class="bt-perfil-cabecera">
+            <div class="bt-perfil-foto">
+                @if (cuenta.FotoId != null)
+                {
+                    <img src="@UrlFoto" alt="Foto de perfil" />
+                }
+                else
+                {
+                    <span class="bt-perfil-iniciales">@Iniciales</span>
+                }
+
+                @* El botón de la cámara abre el selector de archivos (solo PNG, JPG y JPEG) *@
+                <label class="bt-perfil-camara" title="Cambiar foto">
+                    @(subiendoFoto ? "…" : "📷")
+                    <InputFile OnChange="SubirFotoAsync" accept=".png,.jpg,.jpeg,image/png,image/jpeg" disabled="@subiendoFoto" />
+                </label>
+            </div>
+
+            <h2 class="bt-perfil-nombre">@cuenta.Nombre @cuenta.Apellido</h2>
+            <p class="bt-perfil-correo">@cuenta.Email</p>
+
+            @if (cuenta.FotoId != null)
+            {
+                <button type="button" class="bt-btn bt-btn-ghost bt-btn-sm" @onclick="QuitarFotoAsync">Quitar foto</button>
+            }
+            <span class="bt-hint">PNG, JPG o JPEG, máximo 2 MB.</span>
+        </div>
+
+        <div class="bt-form-card">
+            <EditForm Model="cuenta" OnValidSubmit="GuardarDatosAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="bt-form-section">
+                    <h2 class="bt-form-section-title">Datos de la cuenta</h2>
+                    <div class="bt-form-grid">
+                        <div class="bt-field">
+                            <label class="bt-label">Correo</label>
+                            <div class="bt-readonly">@cuenta.Email</div>
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Tipo de cuenta</label>
+                            <div class="bt-readonly">@(cuenta.TipoUsuario == "Admin" ? "Administrador" : cuenta.TipoUsuario)</div>
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">@(EsEmpresa ? "Nombre de la empresa" : "Nombre")</label>
+                            <InputText class="form-control" @bind-Value="cuenta.Nombre" />
+                            <ValidationMessage For="@(() => cuenta.Nombre)" />
+                        </div>
+                        @if (!EsEmpresa)
+                        {
+                            <div class="bt-field">
+                                <label class="bt-label">Apellido</label>
+                                <InputText class="form-control" @bind-Value="cuenta.Apellido" />
+                                <ValidationMessage For="@(() => cuenta.Apellido)" />
+                            </div>
+                        }
+                        <div class="bt-field">
+                            <label class="bt-label">Celular</label>
+                            <InputText class="form-control" type="tel" @bind-Value="cuenta.Celular" />
+                            <ValidationMessage For="@(() => cuenta.Celular)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Miembro desde</label>
+                            <div class="bt-readonly">@cuenta.FechaRegistro.ToString("dd/MM/yyyy")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bt-form-actions">
+                    <button class="bt-btn bt-btn-primary" type="submit">Guardar datos</button>
+                </div>
+            </EditForm>
+        </div>
+
+        <div class="bt-form-card bt-pregunta-form">
+            <EditForm Model="cambioClave" OnValidSubmit="CambiarClaveAsync">
+                <DataAnnotationsValidator />
+
+                <div class="bt-form-section">
+                    <h2 class="bt-form-section-title">Cambiar contraseña</h2>
+                    <div class="bt-form-grid">
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Contraseña actual</label>
+                            <InputText class="form-control" type="password" @bind-Value="cambioClave.ClaveActual" />
+                            <ValidationMessage For="@(() => cambioClave.ClaveActual)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Nueva contraseña</label>
+                            <InputText class="form-control" type="password" @bind-Value="cambioClave.ClaveNueva" />
+                            <ValidationMessage For="@(() => cambioClave.ClaveNueva)" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Confirmación</label>
+                            <InputText class="form-control" type="password" @bind-Value="cambioClave.Confirmacion" />
+                            <ValidationMessage For="@(() => cambioClave.Confirmacion)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bt-form-actions">
+                    <button class="bt-btn bt-btn-primary" type="submit">Cambiar contraseña</button>
+                </div>
+            </EditForm>
+        </div>
+
+        @* ---------- Eliminar cuenta ---------- *@
+        <div class="bt-form-card bt-pregunta-form bt-zona-peligro">
+            <EditForm Model="eliminar" OnValidSubmit="EliminarCuentaAsync">
+                <DataAnnotationsValidator />
+
+                <h2 class="bt-form-section-title">Eliminar mi cuenta</h2>
+                <p class="bt-hint">@AvisoEliminar</p>
+
+                <div class="bt-form-grid">
+                    <div class="bt-field">
+                        <label class="bt-label">Escribe tu contraseña para confirmar</label>
+                        <InputText class="form-control" type="password" @bind-Value="eliminar.Password" />
+                        <ValidationMessage For="@(() => eliminar.Password)" />
+                    </div>
+                </div>
+
+                <div class="bt-form-actions">
+                    <button class="bt-btn bt-btn-danger" type="submit">Eliminar mi cuenta</button>
+                </div>
+            </EditForm>
+        </div>
+    }
+</div>
+
+@code {
+    private CuentaDTO cuenta;
+    private CambioClaveDTO cambioClave = new();
+    private EliminarCuentaDTO eliminar = new();
+    private bool subiendoFoto;
+
+    // Tamaño máximo de la foto: 2 MB (el API también lo revisa)
+    private const long TamanoMaximoFoto = 2 * 1024 * 1024;
+
+    private string UrlFoto => $"{http.BaseAddress}api/imagenes/{cuenta.FotoId}";
+
+    private string Iniciales => string.Concat($"{cuenta?.Nombre} {cuenta?.Apellido}"
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2)
+        .Select(p => char.ToUpper(p[0])));
+
+    private string AvisoEliminar => cuenta?.TipoUsuario switch
+    {
+        "Desarrollador" => "Se borra tu cuenta y tu perfil profesional. Si ya aplicaste a publicaciones, tu perfil queda desactivado para no perder ese historial.",
+        "Empresa" or "Cliente" => "Se borra tu cuenta. Si tienes publicaciones, las que sigan abiertas se cancelan y se conservan para no perder las aplicaciones recibidas.",
+        _ => "Se borra tu cuenta de administrador. El sistema siempre debe tener al menos un administrador."
+    };
+
+    private bool EsEmpresa => cuenta?.TipoUsuario == "Empresa";
+
+    // GET /api/accounts/me
+    protected override async Task OnInitializedAsync()
+    {
+        var respuesta = await repository.GetAsync<CuentaDTO>("/api/accounts/me");
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("Error", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        cuenta = respuesta.Response;
+    }
+
+    // PUT /api/accounts -> devuelve un token nuevo con el nombre actualizado
+    private async Task GuardarDatosAsync()
+    {
+        if (!EsEmpresa && string.IsNullOrWhiteSpace(cuenta.Apellido))
+        {
+            await swal.FireAsync("Falta un dato", "El apellido es obligatorio.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        var respuesta = await repository.PutAsync<CuentaDTO, TokenDTO>("/api/accounts", cuenta);
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("Error", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        await loginService.LoginAsync(respuesta.Response.Token);
+        await swal.FireAsync("Listo", "Tus datos quedaron actualizados.", SweetAlertIcon.Success);
+    }
+
+    // PUT /api/accounts/foto -> la imagen viaja en Base64; el API le asigna un Id y lo guarda en el usuario
+    private async Task SubirFotoAsync(InputFileChangeEventArgs e)
+    {
+        var archivo = e.File;
+        var extension = Path.GetExtension(archivo.Name).ToLowerInvariant();
+        if (extension != ".png" && extension != ".jpg" && extension != ".jpeg")
+        {
+            await swal.FireAsync("Formato no permitido", "Solo se permiten imágenes PNG, JPG o JPEG.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        if (archivo.Size > TamanoMaximoFoto)
+        {
+            await swal.FireAsync("Imagen muy pesada", "La foto debe pesar máximo 2 MB.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        subiendoFoto = true;
+        try
+        {
+            using var memoria = new MemoryStream();
+            await archivo.OpenReadStream(TamanoMaximoFoto).CopyToAsync(memoria);
+
+            var foto = new FotoDTO
+            {
+                Base64 = Convert.ToBase64String(memoria.ToArray()),
+                NombreArchivo = archivo.Name,
+                TipoContenido = archivo.ContentType
+            };
+
+            var respuesta = await repository.PutAsync<FotoDTO, TokenDTO>("/api/accounts/foto", foto);
+            if (respuesta.Error)
+            {
+                await swal.FireAsync("No se pudo subir la foto", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+                return;
+            }
+
+            await loginService.LoginAsync(respuesta.Response.Token);
+            await RecargarCuentaAsync();
+        }
+        finally
+        {
+            subiendoFoto = false;
+        }
+    }
+
+    // DELETE /api/accounts/foto -> FotoId vuelve a NULL
+    private async Task QuitarFotoAsync()
+    {
+        var confirmacion = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "¿Quitar tu foto de perfil?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Sí, quitar",
+            CancelButtonText = "Cancelar"
+        });
+
+        if (string.IsNullOrEmpty(confirmacion.Value))
+        {
+            return;
+        }
+
+        var respuesta = await repository.DeleteAsync("/api/accounts/foto");
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("Error", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        // El API devuelve un token nuevo (sin foto)
+        var token = await respuesta.HttpResponseMessage.Content.ReadFromJsonAsync<TokenDTO>();
+        if (token != null)
+        {
+            await loginService.LoginAsync(token.Token);
+        }
+
+        await RecargarCuentaAsync();
+    }
+
+    private async Task RecargarCuentaAsync()
+    {
+        var respuesta = await repository.GetAsync<CuentaDTO>("/api/accounts/me");
+        if (!respuesta.Error)
+        {
+            cuenta = respuesta.Response;
+        }
+    }
+
+    // POST /api/accounts/eliminar -> pide confirmación, borra la cuenta y cierra la sesión
+    private async Task EliminarCuentaAsync()
+    {
+        var confirmacion = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "¿Eliminar tu cuenta?",
+            Text = "Esta acción no se puede deshacer.",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Sí, eliminar mi cuenta",
+            CancelButtonText = "Cancelar"
+        });
+
+        if (string.IsNullOrEmpty(confirmacion.Value))
+        {
+            return;
+        }
+
+        var respuesta = await repository.PostAsync("/api/accounts/eliminar", eliminar);
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("No se pudo eliminar", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        await loginService.LogoutAsync();
+        await swal.FireAsync("Cuenta eliminada", "Tu cuenta fue eliminada. ¡Gracias por usar SkillNet!", SweetAlertIcon.Success);
+        navigationManager.NavigateTo("/");
+    }
+
+    // POST /api/accounts/changePassword
+    private async Task CambiarClaveAsync()
+    {
+        var respuesta = await repository.PostAsync("/api/accounts/changePassword", cambioClave);
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("Error", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        cambioClave = new();
+        await swal.FireAsync("Listo", "Tu contraseña quedó cambiada.", SweetAlertIcon.Success);
+    }
+}

@@ -1,4 +1,5 @@
 ﻿@page "/publicaciones/create"
+@attribute [Authorize(Roles = "Admin,Empresa,Cliente")]
 @inject IRepository repository
 @inject NavigationManager navigationManager
 @inject SweetAlertService swal
@@ -18,6 +19,7 @@
     <PublicacionForm @ref="publicacionForm"
                      Publicacion="publicacion"
                      HabilidadesSeleccionadas="habilidadesSeleccionadas"
+                     Preguntas="preguntas"
                      OnSubmit="CreateAsync"
                      ReturnAction="Return" />
 </div>
@@ -32,10 +34,12 @@
     };
 
     private List<int> habilidadesSeleccionadas = new();
+    private List<Pregunta> preguntas = new();
     private PublicacionForm publicacionForm;
 
     // 1. Crea la publicación: POST /api/publicaciones (el API devuelve la publicación con su Id)
     // 2. Guarda sus habilidades en la tabla muchos a muchos: POST /api/publicaciones_habilidades
+    // 3. Guarda sus preguntas: POST /api/preguntas (el orden es la posición en la lista)
     private async Task CreateAsync()
     {
         var responseHttp = await repository.PostAsync<Publicacion, Publicacion>("/api/publicaciones", publicacion);
@@ -59,11 +63,25 @@
             }
         }
 
+        var erroresPreguntas = 0;
+        for (var i = 0; i < preguntas.Count; i++)
+        {
+            preguntas[i].IdPublicacion = creada.Id;
+            preguntas[i].Orden = (byte)(i + 1);
+            var respuestaPregunta = await repository.PostAsync("/api/preguntas", preguntas[i]);
+            if (respuestaPregunta.Error)
+            {
+                erroresPreguntas++;
+            }
+        }
+
         publicacionForm.FormPostedSuccessfully = true;
 
-        if (errores > 0)
+        if (errores > 0 || erroresPreguntas > 0)
         {
-            await swal.FireAsync("Atención", $"La publicación se creó, pero {errores} habilidad(es) no se pudieron asignar.", SweetAlertIcon.Warning);
+            await swal.FireAsync("Atención",
+                $"La publicación se creó, pero {errores} habilidad(es) y {erroresPreguntas} pregunta(s) no se pudieron guardar.",
+                SweetAlertIcon.Warning);
         }
 
         navigationManager.NavigateTo($"/publicaciones/{creada.Id}");

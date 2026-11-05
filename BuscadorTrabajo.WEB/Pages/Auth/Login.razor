@@ -1,0 +1,60 @@
+@page "/Login"
+@inject IRepository repository
+@inject SweetAlertService swal
+@inject NavigationManager navigationManager
+@inject ILoginService loginService
+
+<PageTitle>Iniciar sesión | SkillNet</PageTitle>
+
+<div class="bt-auth-card">
+    <h1 class="bt-title">Iniciar sesión</h1>
+    <p class="bt-subtitle">Entra con el correo y la contraseña de tu cuenta.</p>
+
+    <EditForm Model="loginDTO" OnValidSubmit="LoginAsync">
+        <DataAnnotationsValidator />
+
+        <div class="bt-field">
+            <label class="bt-label">Correo</label>
+            <InputText class="form-control" type="email" @bind-Value="loginDTO.Email" placeholder="nombre@correo.com" />
+            <ValidationMessage For="@(() => loginDTO.Email)" />
+        </div>
+
+        <div class="bt-field">
+            <label class="bt-label">Contraseña</label>
+            <InputText class="form-control" type="password" @bind-Value="loginDTO.Password" />
+            <ValidationMessage For="@(() => loginDTO.Password)" />
+        </div>
+
+        <button class="bt-btn bt-btn-primary bt-auth-submit" type="submit" disabled="@enviando">
+            @(enviando ? "Entrando..." : "Iniciar sesión")
+        </button>
+    </EditForm>
+
+    <p class="bt-auth-alt">
+        ¿No tienes cuenta? <a href="/Register">Crear cuenta</a> ·
+        <a href="/desarrolladores/registro">Registrarme como desarrollador</a>
+    </p>
+</div>
+
+@code {
+    private LoginDTO loginDTO = new();
+    private bool enviando;
+
+    // POST /api/accounts/Login -> el API devuelve el token y se guarda en el navegador
+    private async Task LoginAsync()
+    {
+        enviando = true;
+        var responseHttp = await repository.PostAsync<LoginDTO, TokenDTO>("/api/accounts/Login", loginDTO);
+        enviando = false;
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await swal.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        await loginService.LoginAsync(responseHttp.Response!.Token);
+        navigationManager.NavigateTo("/");
+    }
+}

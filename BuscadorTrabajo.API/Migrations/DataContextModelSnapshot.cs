@@ -22,6 +22,127 @@ namespace BuscadorTrabajo.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("BuscadorTrabajo.API.Data.Imagen", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Datos")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTime>("FechaSubida")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NombreArchivo")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("Tamano")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TipoContenido")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Imagenes");
+                });
+
+            modelBuilder.Entity("BuscadorTrabajo.API.Data.User", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Apellido")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("FotoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TipoUsuario")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UltimoAcceso")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FotoId");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("AspNetUsers", (string)null);
+                });
+
             modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Administrador", b =>
                 {
                     b.Property<int>("Id")
@@ -55,10 +176,18 @@ namespace BuscadorTrabajo.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Cedula")
                         .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Administradores");
                 });
@@ -203,10 +332,18 @@ namespace BuscadorTrabajo.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Cedula")
                         .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Clientes");
                 });
@@ -250,10 +387,18 @@ namespace BuscadorTrabajo.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Cedula")
                         .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Desarrolladores");
                 });
@@ -352,10 +497,18 @@ namespace BuscadorTrabajo.API.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NIT")
                         .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Empresas");
                 });
@@ -505,6 +658,44 @@ namespace BuscadorTrabajo.API.Migrations
                     b.ToTable("Perfiles_Habilidades");
                 });
 
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Pregunta", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("IdPublicacion")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Obligatoria")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Opciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<byte>("Orden")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("TipoRespuesta")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdPublicacion");
+
+                    b.ToTable("Preguntas");
+                });
+
             modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Publicacion", b =>
                 {
                     b.Property<int>("Id")
@@ -624,6 +815,186 @@ namespace BuscadorTrabajo.API.Migrations
                     b.ToTable("Publicaciones_Habilidades");
                 });
 
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Respuesta", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("FechaRespuesta")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IdAplicacion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdPregunta")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Valor")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdPregunta");
+
+                    b.HasIndex("IdAplicacion", "IdPregunta")
+                        .IsUnique();
+
+                    b.ToTable("Respuestas");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("BuscadorTrabajo.API.Data.User", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.API.Data.Imagen", null)
+                        .WithMany()
+                        .HasForeignKey("FotoId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Administrador", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.API.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Aplicacion", b =>
                 {
                     b.HasOne("BuscadorTrabajo.Shared.Entities.Desarrollador", "Desarrollador")
@@ -654,6 +1025,22 @@ namespace BuscadorTrabajo.API.Migrations
                     b.Navigation("PerfilProfesional");
                 });
 
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Cliente", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.API.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Desarrollador", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.API.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Educacion", b =>
                 {
                     b.HasOne("BuscadorTrabajo.Shared.Entities.PerfilProfesional", "PerfilProfesional")
@@ -663,6 +1050,14 @@ namespace BuscadorTrabajo.API.Migrations
                         .IsRequired();
 
                     b.Navigation("PerfilProfesional");
+                });
+
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Empresa", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.API.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Experiencia", b =>
@@ -717,6 +1112,17 @@ namespace BuscadorTrabajo.API.Migrations
                     b.Navigation("PerfilProfesional");
                 });
 
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Pregunta", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.Shared.Entities.Publicacion", "Publicacion")
+                        .WithMany()
+                        .HasForeignKey("IdPublicacion")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Publicacion");
+                });
+
             modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Publicacion", b =>
                 {
                     b.HasOne("BuscadorTrabajo.Shared.Entities.Categoria", "Categoria")
@@ -759,6 +1165,81 @@ namespace BuscadorTrabajo.API.Migrations
                     b.Navigation("Habilidad");
 
                     b.Navigation("Publicacion");
+                });
+
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Respuesta", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.Shared.Entities.Aplicacion", "Aplicacion")
+                        .WithMany("Respuestas")
+                        .HasForeignKey("IdAplicacion")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BuscadorTrabajo.Shared.Entities.Pregunta", "Pregunta")
+                        .WithMany()
+                        .HasForeignKey("IdPregunta")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Aplicacion");
+
+                    b.Navigation("Pregunta");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.API.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.API.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BuscadorTrabajo.API.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("BuscadorTrabajo.API.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BuscadorTrabajo.Shared.Entities.Aplicacion", b =>
+                {
+                    b.Navigation("Respuestas");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,21 +1,28 @@
 ﻿using BuscadorTrabajo.API.Data;
 using BuscadorTrabajo.API.Helpers;
 using BuscadorTrabajo.Shared.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BuscadorTrabajo.Shared.DTOs;
+using BuscadorTrabajo.Shared.Enums;
 
 namespace BuscadorTrabajo.API.Controllers
 {
     [ApiController]
     [Route("/api/desarrolladores")]
+    // Solo usuarios con sesión iniciada (token JWT)
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class DesarrolladoresController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IUserHelper _userHelper;
 
-        public DesarrolladoresController(DataContext context)
+        public DesarrolladoresController(DataContext context, IUserHelper userHelper)
         {
             _context = context;
+            _userHelper = userHelper;
         }
 
         // GET /api/desarrolladores
@@ -214,10 +221,34 @@ namespace BuscadorTrabajo.API.Controllers
             }
         }
 
+        // Registro público: crea la cuenta del desarrollador (rol Desarrollador) junto con su perfil.
+        [AllowAnonymous]
         [HttpPost("registro-completo")]
         public async Task<ActionResult> RegistrarCompleto(
         [FromBody] RegistroDesarrolladorDTO registro)
         {
+            // Datos de acceso: correo (el de sus datos personales) y contraseña.
+            // Si lo registra un administrador conectado, la contraseña puede ir vacía y se crea sin cuenta.
+            var creaCuenta = !User.IsInRole("Admin") || !string.IsNullOrWhiteSpace(registro?.DatosPersonales?.Password);
+            if (creaCuenta)
+            {
+                if (string.IsNullOrWhiteSpace(registro?.DatosPersonales?.Password) || registro.DatosPersonales.Password.Length < 6)
+                {
+                    return BadRequest("La contraseña es obligatoria y debe tener al menos 6 caracteres.");
+                }
+
+                if (registro.DatosPersonales.Password != registro.DatosPersonales.PasswordConfirm)
+                {
+                    return BadRequest("La contraseña y la confirmación no son iguales.");
+                }
+
+                registro.DatosPersonales.Correo = registro.DatosPersonales.Correo?.Trim().ToLower();
+                if (await _userHelper.GetUserAsync(registro.DatosPersonales.Correo) != null)
+                {
+                    return Conflict("Ya existe una cuenta con ese correo.");
+                }
+            }
+
             // Validar la selección de habilidades.
             if (registro == null || registro.HabilidadesIds == null)
             {
@@ -249,9 +280,34 @@ namespace BuscadorTrabajo.API.Controllers
 
             try
             {
+                // 0. Crear la cuenta de usuario con el rol Desarrollador.
+                User usuario = null;
+                if (creaCuenta)
+                {
+                    usuario = new User
+                    {
+                        Email = registro.DatosPersonales.Correo,
+                        UserName = registro.DatosPersonales.Correo,
+                        PhoneNumber = registro.DatosPersonales.Celular,
+                        Nombre = registro.DatosPersonales.Nombre,
+                        Apellido = registro.DatosPersonales.Apellido,
+                        TipoUsuario = UserType.Desarrollador
+                    };
+
+                    var resultado = await _userHelper.AddUserAsync(usuario, registro.DatosPersonales.Password);
+                    if (!resultado.Succeeded)
+                    {
+                        await transaction.RollbackAsync();
+                        return BadRequest(resultado.Errors.FirstOrDefault()?.Description ?? "No se pudo crear la cuenta.");
+                    }
+
+                    await _userHelper.AddUserToRoleAsync(usuario, nameof(UserType.Desarrollador));
+                }
+
                 // 1. Crear los datos personales del desarrollador.
                 var desarrollador = new Desarrollador
                 {
+                    UserId = usuario?.Id,
                     Cedula = registro.DatosPersonales.Cedula,
                     Nombre = registro.DatosPersonales.Nombre,
                     Apellido = registro.DatosPersonales.Apellido,
@@ -341,7 +397,8 @@ namespace BuscadorTrabajo.API.Controllers
                     {
                         mensaje = "El registro del desarrollador se completó correctamente.",
                         idDesarrollador = desarrollador.Id,
-                        idPerfilProfesional = perfil.Id
+                        idPerfilProfesional = perfil.Id,
+                        cuentaCreada = usuario != null
                     });
             }
             catch (DbUpdateException ex) when (ErroresBaseDatos.EsDuplicado(ex))
@@ -675,6 +732,7 @@ namespace BuscadorTrabajo.API.Controllers
         // Sin aplicaciones: se borra de verdad, con su perfil y todo lo que cuelga del perfil.
         // Con aplicaciones: no se borra, para no perder el historial. Primero responde 409
         // pidiendo confirmación; si se confirma, el desarrollador queda inactivo (Activo = false).
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id, [FromQuery] bool confirmarConservarHistorial = false)
         {

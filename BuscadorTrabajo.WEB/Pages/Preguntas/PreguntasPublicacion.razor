@@ -1,0 +1,248 @@
+@page "/publicaciones/{IdPublicacion:int}/preguntas"
+@inject IRepository repository
+@inject SweetAlertService swal
+
+@* Preguntas adicionales de una publicación (RN50, RN51).
+   Las responde el desarrollador cuando aplica. Solo el dueño de la publicación o un administrador las gestiona. *@
+
+<PageTitle>Preguntas de la publicación | SkillNet</PageTitle>
+
+<div class="bt-page bt-page-narrow">
+    <a class="bt-back" href="/publicaciones/@IdPublicacion">‹ Volver a la publicación</a>
+
+    <div class="bt-page-header">
+        <div>
+            <h1 class="bt-title">Preguntas para los aspirantes</h1>
+            <p class="bt-subtitle">@(publicacion?.Titulo ?? "Cargando publicación...")</p>
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="bt-loading-card">
+            <div class="bt-spinner"></div>
+            <p>Cargando preguntas...</p>
+        </div>
+    }
+    else
+    {
+        if (preguntas.Count == 0)
+        {
+            <div class="bt-empty">Esta publicación todavía no tiene preguntas.</div>
+        }
+        else
+        {
+            <div class="bt-record-list">
+                @foreach (var pregunta in preguntas)
+                {
+                    <div class="bt-record-card">
+                        <div class="bt-pregunta-head">
+                            <span class="bt-count">@pregunta.Orden</span>
+                            <div>
+                                <div class="bt-record-title">@pregunta.Texto</div>
+                                <div class="bt-record-subtitle">
+                                    @NombreTipo(pregunta.TipoRespuesta) · @(pregunta.Obligatoria ? "Obligatoria" : "Opcional")
+                                    @if (pregunta.TipoRespuesta == "OPCION_UNICA")
+                                    {
+                                        <span> · Opciones: @(string.Join(", ", pregunta.ListaOpciones()))</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bt-inline-actions">
+                            <button class="bt-btn bt-btn-soft bt-btn-sm" @onclick="() => Editar(pregunta)">Editar</button>
+                            <button class="bt-btn bt-btn-danger bt-btn-sm" @onclick="() => BorrarAsync(pregunta)">Borrar</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="bt-form-card bt-pregunta-form">
+            <EditForm @key="editando" Model="editando" OnValidSubmit="GuardarAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <h2 class="bt-form-section-title">@(editando.Id == 0 ? "Agregar pregunta" : "Editar pregunta")</h2>
+
+                <div class="bt-form-grid">
+                    <div class="bt-field bt-field-full">
+                        <label class="bt-label">Pregunta</label>
+                        <InputTextArea class="form-control" rows="2" @bind-Value="editando.Texto" placeholder="Ej: ¿Cuántos años de experiencia tienes con SQL?" />
+                        <ValidationMessage For="@(() => editando.Texto)" />
+                    </div>
+
+                    <div class="bt-field">
+                        <label class="bt-label">Tipo de respuesta</label>
+                        <InputSelect class="form-select" @bind-Value="editando.TipoRespuesta">
+                            @foreach (var tipo in Pregunta.TiposRespuesta)
+                            {
+                                <option value="@tipo">@NombreTipo(tipo)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => editando.TipoRespuesta)" />
+                    </div>
+
+                    <div class="bt-field">
+                        <label class="bt-label">Orden</label>
+                        <InputNumber class="form-control" @bind-Value="orden" min="1" max="255" />
+                        <span class="bt-hint">Posición en la que aparece al aplicar.</span>
+                    </div>
+
+                    @if (editando.TipoRespuesta == "OPCION_UNICA")
+                    {
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Opciones (separadas por punto y coma)</label>
+                            <InputText class="form-control" @bind-Value="editando.Opciones" placeholder="Junior;Semi senior;Senior" />
+                            <ValidationMessage For="@(() => editando.Opciones)" />
+                        </div>
+                    }
+
+                    <div class="bt-field bt-field-full">
+                        <label class="bt-check">
+                            <InputCheckbox @bind-Value="editando.Obligatoria" />
+                            Es obligatoria (no se puede aplicar sin responderla)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bt-form-actions">
+                    @if (editando.Id != 0)
+                    {
+                        <button class="bt-btn bt-btn-ghost" type="button" @onclick="Nueva">Cancelar edición</button>
+                    }
+                    <button class="bt-btn bt-btn-primary" type="submit">@(editando.Id == 0 ? "Agregar" : "Guardar cambios")</button>
+                </div>
+            </EditForm>
+        </div>
+
+        <p class="bt-hint">Cuando la publicación recibe su primera aplicación, sus preguntas ya no se pueden cambiar.</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int IdPublicacion { get; set; }
+
+    private Publicacion publicacion;
+    private List<Pregunta> preguntas = new();
+    private Pregunta editando = new();
+    private int orden = 1;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var respuestaPublicacion = await repository.GetAsync<Publicacion>($"/api/publicaciones/{IdPublicacion}");
+        if (!respuestaPublicacion.Error)
+        {
+            publicacion = respuestaPublicacion.Response;
+        }
+
+        await CargarAsync();
+        Nueva();
+        cargando = false;
+    }
+
+    // GET /api/preguntas?publicacion=5
+    private async Task CargarAsync()
+    {
+        var respuesta = await repository.GetAsync<List<Pregunta>>($"/api/preguntas?publicacion={IdPublicacion}");
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("Error", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        preguntas = respuesta.Response;
+    }
+
+    private void Nueva()
+    {
+        editando = new Pregunta { IdPublicacion = IdPublicacion, TipoRespuesta = "TEXTO", Obligatoria = true };
+        orden = preguntas.Count == 0 ? 1 : Math.Min(255, preguntas.Max(x => x.Orden) + 1);
+    }
+
+    private void Editar(Pregunta pregunta)
+    {
+        // Se edita una copia para no cambiar la lista si se cancela
+        editando = new Pregunta
+        {
+            Id = pregunta.Id,
+            IdPublicacion = pregunta.IdPublicacion,
+            Texto = pregunta.Texto,
+            TipoRespuesta = pregunta.TipoRespuesta,
+            Opciones = pregunta.Opciones,
+            Obligatoria = pregunta.Obligatoria,
+            Orden = pregunta.Orden
+        };
+        orden = pregunta.Orden;
+    }
+
+    // POST o PUT /api/preguntas
+    private async Task GuardarAsync()
+    {
+        if (orden < 1 || orden > 255)
+        {
+            await swal.FireAsync("Orden no válido", "El orden debe estar entre 1 y 255.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        editando.Orden = (byte)orden;
+        if (editando.TipoRespuesta != "OPCION_UNICA")
+        {
+            editando.Opciones = null;
+        }
+
+        var respuesta = editando.Id == 0
+            ? await repository.PostAsync("/api/preguntas", editando)
+            : await repository.PutAsync("/api/preguntas", editando);
+
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("No se pudo guardar", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        await CargarAsync();
+        Nueva();
+        await swal.FireAsync("Listo", "La pregunta quedó guardada.", SweetAlertIcon.Success);
+    }
+
+    // DELETE /api/preguntas/5
+    private async Task BorrarAsync(Pregunta pregunta)
+    {
+        var confirmacion = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "¿Borrar la pregunta?",
+            Text = pregunta.Texto,
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Sí, borrar",
+            CancelButtonText = "Cancelar"
+        });
+
+        if (string.IsNullOrEmpty(confirmacion.Value))
+        {
+            return;
+        }
+
+        var respuesta = await repository.DeleteAsync($"/api/preguntas/{pregunta.Id}");
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("No se pudo borrar", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        await CargarAsync();
+        Nueva();
+    }
+
+    private static string NombreTipo(string tipo) => tipo switch
+    {
+        "TEXTO" => "Texto libre",
+        "SI_NO" => "Sí / No",
+        "NUMERO" => "Número",
+        "OPCION_UNICA" => "Opción única",
+        _ => tipo
+    };
+}

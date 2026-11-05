@@ -1,6 +1,8 @@
 ﻿using BuscadorTrabajo.API.Data;
 using BuscadorTrabajo.API.Helpers;
 using BuscadorTrabajo.Shared.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +10,7 @@ namespace BuscadorTrabajo.API.Controllers
 {
     [ApiController]
     [Route("/api/publicaciones")]
+    // Consultar (GET) es público; crear, editar y borrar requiere iniciar sesión con rol Admin, Empresa, Cliente
     public class PublicacionesController : ControllerBase
     {
         private readonly DataContext _context;
@@ -85,12 +88,26 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // POST /api/publicaciones
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Empresa,Cliente")]
         [HttpPost]
         public async Task<ActionResult> Post(Publicacion publicacion)
         {
             var hoy = DateOnly.FromDateTime(DateTime.Today);
 
             publicacion.Id = 0; // El Id lo genera la base de datos
+
+            // Una empresa o un cliente siempre publica a su propio nombre (el admin puede elegir)
+            if (!User.EsAdmin())
+            {
+                var idRegistro = User.IdRegistro();
+                if (idRegistro == 0)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, "Tu cuenta no está vinculada a una empresa o cliente."); //403
+                }
+
+                publicacion.IdEmpresa = User.IsInRole("Empresa") ? idRegistro : null;
+                publicacion.IdCliente = User.IsInRole("Cliente") ? idRegistro : null;
+            }
 
             if (publicacion.FechaCreacion == default)
             {
@@ -127,6 +144,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // PUT /api/publicaciones
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Empresa,Cliente")]
         [HttpPut]
         public async Task<ActionResult> Put(Publicacion publicacion)
         {
@@ -137,6 +155,18 @@ namespace BuscadorTrabajo.API.Controllers
             if (actual == null)
             {
                 return NotFound("No existe una publicación con ese Id."); //404
+            }
+
+            // Solo el dueño de la publicación (o un administrador) la edita, y no puede cambiar de dueño
+            if (!User.EsDuenoPublicacion(actual))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Solo el dueño de la publicación puede editarla."); //403
+            }
+
+            if (!User.EsAdmin())
+            {
+                publicacion.IdEmpresa = actual.IdEmpresa;
+                publicacion.IdCliente = actual.IdCliente;
             }
 
             // El estado solo cambia siguiendo las transiciones permitidas (RN24)
@@ -180,6 +210,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // DELETE /api/publicaciones/5
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Empresa,Cliente")]
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {
@@ -187,6 +218,11 @@ namespace BuscadorTrabajo.API.Controllers
             if (publicacion == null)
             {
                 return NotFound("No existe una publicación con ese Id."); //404
+            }
+
+            if (!User.EsDuenoPublicacion(publicacion))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Solo el dueño de la publicación puede borrarla."); //403
             }
 
             // Una publicación con aplicaciones no se borra: se cierra o se cancela (RN25)

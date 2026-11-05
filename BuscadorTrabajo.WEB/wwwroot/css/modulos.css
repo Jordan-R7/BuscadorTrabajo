@@ -1562,3 +1562,171 @@ a.bt-auth-user {
 .bt-auth-avatar {
     overflow: hidden;
 }
+
+/*---------- Página 404 ---------- */
+
+.sn-notfound {
+    width: 100%;
+    min-height: calc(100vh - 100px);
+    display: grid;
+    place-items: center;
+    padding: clamp(20px, 5vw, 48px);
+}
+
+.sn-notfound-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    width: 100%;
+    max-width: 1000px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: clamp(20px, 4vw, 52px);
+    padding: clamp(26px, 5vw, 56px);
+    background: linear-gradient( 135deg, rgba(99, 217, 242, 0.09), transparent 65% ), var(--sn-surface);
+    border: 1px solid var(--sn-border);
+    border-radius: 28px;
+    box-shadow: var(--sn-shadow);
+}
+
+.sn-notfound-content {
+    position: relative;
+    z-index: 2;
+}
+
+.sn-notfound-tag {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: var(--sn-amber);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.sn-notfound-code {
+    margin: 0 0 18px;
+    color: var(--sn-primary);
+    font-size: clamp(90px, 13vw, 150px);
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -10px;
+    text-shadow: 0 0 35px rgba(99, 217, 242, 0.25);
+}
+
+.sn-notfound-content h1 {
+    margin: 0 0 14px;
+    color: var(--sn-text);
+    font-size: clamp(25px, 3vw, 34px);
+    font-weight: 800;
+}
+
+.sn-notfound-description {
+    max-width: 420px;
+    margin-bottom: 26px;
+    color: var(--sn-muted);
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+.sn-notfound-button {
+    gap: 12px;
+    padding: 12px 22px;
+    border-radius: 12px;
+}
+
+.sn-notfound-footer {
+    margin-top: 38px;
+    margin-bottom: 0;
+    color: var(--sn-divider);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.sn-notfound-art {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 360px;
+}
+
+.sn-notfound-glow {
+    position: absolute;
+    z-index: -1;
+    width: 85%;
+    aspect-ratio: 1;
+    background: rgba(99, 217, 242, 0.13);
+    border-radius: 50%;
+    filter: blur(65px);
+}
+
+.sn-notfound-image {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    max-height: 400px;
+    object-fit: contain;
+    filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.3));
+    animation: suz-float 4s ease-in-out infinite;
+}
+
+.sn-notfound-caption {
+    margin-top: 12px;
+    color: var(--sn-primary);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+@keyframes suz-float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+/* Adaptación para dispositivos móviles */
+
+@media (max-width: 700px) {
+    .sn-notfound {
+        min-height: auto;
+        padding: 25px 16px 45px;
+    }
+
+    .sn-notfound-card {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 30px 22px;
+        text-align: center;
+    }
+
+    .sn-notfound-description {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .sn-notfound-art {
+        min-height: 250px;
+    }
+
+    .sn-notfound-image {
+        max-height: 280px;
+        max-width: 300px;
+    }
+
+    .sn-notfound-footer {
+        margin-top: 25px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sn-notfound-image {
+        animation: none;
+    }
+}

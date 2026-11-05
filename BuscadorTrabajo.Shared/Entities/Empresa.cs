@@ -56,6 +56,11 @@ namespace BuscadorTrabajo.Shared.Entities
         [UrlOpcional(ErrorMessage = "El sitio web debe ser una URL válida")]
         public string SitioWeb { get; set; }
 
+        // Usuario (cuenta de acceso) al que pertenece este registro.
+        // Puede ir vacío en registros creados por un administrador sin cuenta.
+        [MaxLength(450)]
+        public string UserId { get; set; }
+
         
         
     }

@@ -1,6 +1,8 @@
 ﻿using BuscadorTrabajo.API.Data;
 using BuscadorTrabajo.API.Helpers;
 using BuscadorTrabajo.Shared.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +10,8 @@ namespace BuscadorTrabajo.API.Controllers
 {
     [ApiController]
     [Route("/api/aplicaciones")]
+    // Solo usuarios con sesión iniciada (token JWT)
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class AplicacionesController : ControllerBase
     {
         private readonly DataContext _context;
@@ -31,8 +35,10 @@ namespace BuscadorTrabajo.API.Controllers
         [HttpGet]
         public async Task<ActionResult> Get()
         {
+            // Cada usuario ve solo las aplicaciones que le corresponden (PermisosUsuario.VisiblesPara)
             return Ok(await _context.Aplicaciones
                 .AsNoTracking()
+                .VisiblesPara(User)
                 .OrderBy(x => x.Id)
                 .ToListAsync());
         }
@@ -47,6 +53,7 @@ namespace BuscadorTrabajo.API.Controllers
 
             var query = _context.Aplicaciones
                 .AsNoTracking()
+                .VisiblesPara(User)
                 .OrderBy(x => x.Id);
 
             var totalRecords = await query.CountAsync(); // Cuenta todos los registros
@@ -74,6 +81,7 @@ namespace BuscadorTrabajo.API.Controllers
         {
             var aplicacion = await _context.Aplicaciones
                 .AsNoTracking()
+                .VisiblesPara(User)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (aplicacion == null)
@@ -89,6 +97,17 @@ namespace BuscadorTrabajo.API.Controllers
         public async Task<ActionResult> Post(Aplicacion aplicacion)
         {
             var hoy = DateOnly.FromDateTime(DateTime.Today);
+
+            // Solo aplican los desarrolladores, y siempre a su propio nombre (el admin puede elegir)
+            if (!User.EsAdmin())
+            {
+                if (!User.IsInRole("Desarrollador") || User.IdRegistro() == 0)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, "Solo los desarrolladores pueden aplicar a una publicación."); //403
+                }
+
+                aplicacion.IdDesarrollador = User.IdRegistro();
+            }
 
             aplicacion.Id = 0;              // El Id lo genera la base de datos
             aplicacion.Estado = "PENDIENTE"; // Toda aplicación empieza pendiente (RN31)
@@ -154,6 +173,13 @@ namespace BuscadorTrabajo.API.Controllers
                 return BadRequest(error); //400
             }
 
+            // Respuestas a las preguntas de la publicación (RN52 a RN56)
+            error = await ValidadorRespuestas.ValidarAsync(_context, aplicacion);
+            if (error != null)
+            {
+                return BadRequest(error); //400
+            }
+
             try
             {
                 _context.Add(aplicacion);
@@ -180,6 +206,39 @@ namespace BuscadorTrabajo.API.Controllers
                 return NotFound("No existe una aplicación con ese Id."); //404
             }
 
+            // Quién puede cambiar qué:
+            //  - el desarrollador dueño de la aplicación: su mensaje y propuesta, y solo puede RETIRARLA
+            //  - la empresa o el cliente dueño de la publicación: solo el estado (revisar, aceptar, rechazar)
+            //  - el administrador: todo
+            if (!User.EsAdmin())
+            {
+                var esSuAplicacion = User.IsInRole("Desarrollador") && actual.IdDesarrollador == User.IdRegistro();
+                var esDuenoPublicacion = User.EsDuenoPublicacion(actual.Publicacion);
+
+                if (esSuAplicacion)
+                {
+                    if (actual.Estado != aplicacion.Estado && aplicacion.Estado != "RETIRADA")
+                    {
+                        return BadRequest("Como desarrollador solo puedes retirar tu aplicación."); //400
+                    }
+                }
+                else if (esDuenoPublicacion)
+                {
+                    if (aplicacion.Estado == "RETIRADA" && actual.Estado != "RETIRADA")
+                    {
+                        return BadRequest("Solo el desarrollador puede retirar su aplicación."); //400
+                    }
+
+                    aplicacion.Mensaje = actual.Mensaje;
+                    aplicacion.MontoPropuesto = actual.MontoPropuesto;
+                    aplicacion.PlazoEstimado = actual.PlazoEstimado;
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, "No puedes modificar esta aplicación."); //403
+                }
+            }
+
             // La publicación y el desarrollador de una aplicación no se cambian
             if (actual.IdPublicacion != aplicacion.IdPublicacion || actual.IdDesarrollador != aplicacion.IdDesarrollador)
             {
@@ -198,12 +257,14 @@ namespace BuscadorTrabajo.API.Controllers
                 return BadRequest(error); //400
             }
 
+            aplicacion.Respuestas = null; // Las respuestas no se modifican al editar la aplicación
             _context.Update(aplicacion);
             await _context.SaveChangesAsync();
             return Ok(aplicacion);
         }
 
-        // DELETE /api/aplicaciones/5
+        // DELETE /api/aplicaciones/5  (solo el administrador; los demás la retiran o la rechazan)
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {

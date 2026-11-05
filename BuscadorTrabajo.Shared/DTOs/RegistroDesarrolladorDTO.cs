@@ -55,6 +55,16 @@ namespace BuscadorTrabajo.Shared.DTOs
         [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
         public DateOnly FechaNacimiento { get; set; }
 
+        // Contraseña de la cuenta. Solo se pide al registrarse (en "Editar perfil" va vacía);
+        // la obligatoriedad la revisa el asistente y el endpoint registro-completo.
+        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres.")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+
+        [Compare(nameof(Password), ErrorMessage = "La contraseña y la confirmación no son iguales.")]
+        [DataType(DataType.Password)]
+        public string PasswordConfirm { get; set; }
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (FechaNacimiento == default)

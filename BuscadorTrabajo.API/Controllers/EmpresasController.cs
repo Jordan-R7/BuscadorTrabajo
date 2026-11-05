@@ -1,6 +1,8 @@
 ﻿using BuscadorTrabajo.API.Data;
 using BuscadorTrabajo.API.Helpers;
 using BuscadorTrabajo.Shared.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +10,7 @@ namespace BuscadorTrabajo.API.Controllers
 {
     [ApiController]
     [Route("/api/empresas")]
+    // Consultar (GET) es público; crear, editar y borrar requiere iniciar sesión con rol Admin
     public class EmpresasController : ControllerBase
     {
         private readonly DataContext _context;
@@ -75,6 +78,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // POST /api/empresas
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult> Post(Empresa empresa)
         {
@@ -99,6 +103,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // PUT /api/empresas
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpPut]
         public async Task<ActionResult> Put(Empresa empresa)
         {
@@ -127,6 +132,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // DELETE /api/empresas/5
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {

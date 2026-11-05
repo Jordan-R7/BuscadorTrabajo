@@ -4,12 +4,13 @@
 @inject IRepository repository
 @inject NavigationManager navigationManager
 @inject SweetAlertService swal
+@inject ILoginService loginService
 
 <PageTitle>Registro de desarrollador | SkillNet</PageTitle>
 
 <div class="bt-page">
-    <a class="bt-back" href="/desarrolladores">
-        ‹ Volver a desarrolladores
+    <a class="bt-back" href="@(esAdmin ? "/desarrolladores" : "/")">
+        ‹ @(esAdmin ? "Volver a desarrolladores" : "Volver al inicio")
     </a>
 
     <div class="bt-page-header">
@@ -90,6 +91,8 @@
     {
         <PasoDatosPersonales
             Datos="registro.DatosPersonales"
+            MostrarCuenta="true"
+            CuentaObligatoria="!esAdmin"
             OnContinuar="AvanzarAsync" />
     }
     else if (pasoActual == 2)
@@ -164,6 +167,17 @@
 
     private bool guardando = false;
 
+    // Un administrador conectado puede registrar desarrolladores sin cambiar su propia sesión
+    private bool esAdmin;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        esAdmin = (await authenticationStateTask).User.IsInRole("Admin");
+    }
+
     private Task AvanzarAsync()
     {
         if (pasoActual < 7)
@@ -212,12 +226,35 @@
                 return;
             }
 
+            if (esAdmin)
+            {
+                await swal.FireAsync(
+                    "¡Registro exitoso!",
+                    "El desarrollador y su perfil profesional fueron registrados correctamente.",
+                    SweetAlertIcon.Success);
+
+                navigationManager.NavigateTo("/desarrolladores");
+                return;
+            }
+
+            // La persona se registró a sí misma: inicia sesión con su correo y contraseña
+            var login = new LoginDTO
+            {
+                Email = registro.DatosPersonales.Correo,
+                Password = registro.DatosPersonales.Password
+            };
+            var respuestaLogin = await repository.PostAsync<LoginDTO, TokenDTO>("/api/accounts/Login", login);
+            if (!respuestaLogin.Error)
+            {
+                await loginService.LoginAsync(respuestaLogin.Response.Token);
+            }
+
             await swal.FireAsync(
                 "¡Registro exitoso!",
-                "El desarrollador y su perfil profesional fueron registrados correctamente.",
+                "Tu cuenta y tu perfil profesional quedaron creados. ¡Ya puedes aplicar a publicaciones!",
                 SweetAlertIcon.Success);
 
-            navigationManager.NavigateTo("/desarrolladores");
+            navigationManager.NavigateTo("/publicaciones");
         }
         catch (Exception ex)
         {

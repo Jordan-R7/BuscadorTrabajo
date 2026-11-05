@@ -18,10 +18,18 @@
             <div class="bt-form-grid">
                 <div class="bt-field">
                     <label class="bt-label">Publica</label>
-                    <div class="bt-segment">
-                        <button type="button" class="@(esDeCliente ? "" : "active")" @onclick="@(() => CambiarPropietario(false))">Empresa</button>
-                        <button type="button" class="@(esDeCliente ? "active" : "")" @onclick="@(() => CambiarPropietario(true))">Cliente</button>
-                    </div>
+                    @if (propietarioFijo)
+                    {
+                        @* Una empresa o un cliente siempre publica a su propio nombre *@
+                        <div class="bt-readonly">@NombrePropietario</div>
+                    }
+                    else
+                    {
+                        <div class="bt-segment">
+                            <button type="button" class="@(esDeCliente ? "" : "active")" @onclick="@(() => CambiarPropietario(false))">Empresa</button>
+                            <button type="button" class="@(esDeCliente ? "active" : "")" @onclick="@(() => CambiarPropietario(true))">Cliente</button>
+                        </div>
+                    }
                 </div>
 
                 <div class="bt-field">
@@ -36,7 +44,7 @@
                     }
                 </div>
 
-                <div class="bt-field bt-field-full">
+                <div class="bt-field bt-field-full @(propietarioFijo ? "d-none" : "")">
                     <label class="bt-label">@(esDeCliente ? "Cliente" : "Empresa")</label>
                     <select class="form-select" @bind="IdPropietario">
                         <option value="0">Selecciona @(esDeCliente ? "un cliente" : "una empresa")</option>
@@ -219,6 +227,126 @@
                 }
             </div>
             <p class="bt-hint" style="margin-top: 10px;">Toca una habilidad para agregarla o quitarla.</p>
+
+            @* Botón + : crear una habilidad que no está en la lista y dejarla marcada para esta publicación *@
+            @if (!mostrarNuevaHabilidad)
+            {
+                <button type="button" class="bt-btn bt-btn-soft bt-btn-sm bt-agregar" @onclick="AbrirNuevaHabilidad">+ Agregar otra habilidad</button>
+            }
+            else
+            {
+                <div class="bt-subform">
+                    <div class="bt-form-grid">
+                        <div class="bt-field">
+                            <label class="bt-label">Nombre de la habilidad</label>
+                            <input class="form-control" maxlength="50" @bind="nuevaHabilidad.Nombre" placeholder="Ej: Blazor" />
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Categoría</label>
+                            <select class="form-select" @bind="nuevaHabilidad.IdCategoria">
+                                <option value="0">Selecciona una categoría</option>
+                                @foreach (var categoria in categorias)
+                                {
+                                    <option value="@categoria.Id">@categoria.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Descripción corta (opcional)</label>
+                            <input class="form-control" maxlength="500" @bind="nuevaHabilidad.Descripcion" placeholder="¿Para qué se usa?" />
+                        </div>
+                    </div>
+                    <div class="bt-inline-actions">
+                        <button type="button" class="bt-btn bt-btn-ghost bt-btn-sm" @onclick="CerrarNuevaHabilidad">Cancelar</button>
+                        <button type="button" class="bt-btn bt-btn-primary bt-btn-sm" disabled="@creandoHabilidad" @onclick="CrearHabilidadAsync">
+                            @(creandoHabilidad ? "Agregando..." : "Agregar a esta publicación")
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* ---------- Preguntas para los aspirantes (tabla Preguntas, RN50) ---------- *@
+        <div class="bt-form-section">
+            <h2 class="bt-form-section-title">Preguntas para quienes apliquen (opcional)</h2>
+
+            @if (Preguntas == null)
+            {
+                @* Al editar, las preguntas se manejan en su propia página *@
+                <p class="bt-hint">
+                    Las preguntas de esta publicación se gestionan en
+                    <a href="/publicaciones/@Publicacion.Id/preguntas">Preguntas de la publicación</a>.
+                </p>
+            }
+            else
+            {
+                if (Preguntas.Count == 0)
+                {
+                    <p class="bt-hint">Aún no agregas preguntas. El desarrollador las responderá al aplicar.</p>
+                }
+                else
+                {
+                    <div class="bt-record-list">
+                        @for (var i = 0; i < Preguntas.Count; i++)
+                        {
+                            var indice = i;
+                            var pregunta = Preguntas[indice];
+                            <div class="bt-record-card">
+                                <div class="bt-pregunta-head">
+                                    <span class="bt-count">@(indice + 1)</span>
+                                    <div>
+                                        <div class="bt-record-title">@pregunta.Texto</div>
+                                        <div class="bt-record-subtitle">
+                                            @NombreTipoPregunta(pregunta.TipoRespuesta) · @(pregunta.Obligatoria ? "Obligatoria" : "Opcional")
+                                            @if (pregunta.TipoRespuesta == "OPCION_UNICA")
+                                            {
+                                                <span> · @(string.Join(", ", pregunta.ListaOpciones()))</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bt-inline-actions">
+                                    <button type="button" class="bt-btn bt-btn-danger bt-btn-sm" @onclick="@(() => Preguntas.RemoveAt(indice))">Quitar</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="bt-subform">
+                    <div class="bt-form-grid">
+                        <div class="bt-field bt-field-full">
+                            <label class="bt-label">Nueva pregunta</label>
+                            <textarea class="form-control" rows="2" maxlength="500" @bind="nuevaPregunta.Texto" placeholder="Ej: ¿Cuántos años de experiencia tienes con SQL?"></textarea>
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-label">Tipo de respuesta</label>
+                            <select class="form-select" @bind="nuevaPregunta.TipoRespuesta">
+                                @foreach (var tipo in Pregunta.TiposRespuesta)
+                                {
+                                    <option value="@tipo">@NombreTipoPregunta(tipo)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="bt-field">
+                            <label class="bt-check" style="margin-top: 28px;">
+                                <input type="checkbox" @bind="nuevaPregunta.Obligatoria" />
+                                Es obligatoria
+                            </label>
+                        </div>
+                        @if (nuevaPregunta.TipoRespuesta == "OPCION_UNICA")
+                        {
+                            <div class="bt-field bt-field-full">
+                                <label class="bt-label">Opciones (separadas por punto y coma)</label>
+                                <input class="form-control" maxlength="500" @bind="nuevaPregunta.Opciones" placeholder="Junior;Semi senior;Senior" />
+                            </div>
+                        }
+                    </div>
+                    <div class="bt-inline-actions">
+                        <button type="button" class="bt-btn bt-btn-soft bt-btn-sm" @onclick="AgregarPreguntaAsync">+ Agregar pregunta</button>
+                    </div>
+                </div>
+            }
         </div>
 
         <div class="bt-form-actions">
@@ -253,9 +381,42 @@
     // true = la publica un cliente; false = la publica una empresa
     private bool esDeCliente;
 
+    // true cuando quien entra es una empresa o un cliente: el propietario es él mismo y no se elige
+    private bool propietarioFijo;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    private string NombrePropietario
+    {
+        get
+        {
+            if (esDeCliente)
+            {
+                var cliente = clientes.FirstOrDefault(c => c.Id == Publicacion.IdCliente);
+                return cliente is null ? "Tu cuenta de cliente" : $"{cliente.Nombre} {cliente.Apellido} (cliente)";
+            }
+
+            var empresa = empresas.FirstOrDefault(e => e.Id == Publicacion.IdEmpresa);
+            return empresa is null ? "Tu empresa" : $"{empresa.Nombre} (empresa)";
+        }
+    }
+
     [EditorRequired]
     [Parameter]
     public Publicacion Publicacion { get; set; }
+
+    // Preguntas que se van a crear con la publicación. Solo se pasa al CREAR;
+    // al editar va en null y las preguntas se manejan en su propia página.
+    [Parameter]
+    public List<Pregunta> Preguntas { get; set; }
+
+    private Pregunta nuevaPregunta = new() { TipoRespuesta = "TEXTO", Obligatoria = true };
+
+    // Formulario del botón "+ Agregar otra habilidad"
+    private bool mostrarNuevaHabilidad;
+    private bool creandoHabilidad;
+    private Habilidad nuevaHabilidad = new();
 
     // Ids de las habilidades marcadas. La página que usa el formulario las guarda en Publicaciones_Habilidades.
     [EditorRequired]
@@ -307,6 +468,24 @@
         clientes = respuestaClientes.Response.OrderBy(c => c.Nombre).ToList();
         categorias = respuestaCategorias.Response.OrderBy(c => c.Nombre).ToList();
         habilidades = respuestaHabilidades.Response.OrderBy(h => h.Nombre).ToList();
+
+        // Empresa o cliente conectado: la publicación queda a su nombre (su Id viene en el token)
+        var usuario = (await authenticationStateTask).User;
+        if (!usuario.IsInRole("Admin")
+            && (usuario.IsInRole("Empresa") || usuario.IsInRole("Cliente"))
+            && int.TryParse(usuario.FindFirst("IdRegistro")?.Value, out var idRegistro) && idRegistro > 0)
+        {
+            propietarioFijo = true;
+            esDeCliente = usuario.IsInRole("Cliente");
+            Publicacion.IdCliente = esDeCliente ? idRegistro : null;
+            Publicacion.IdEmpresa = esDeCliente ? null : idRegistro;
+
+            // RN19: un cliente solo publica solicitudes de servicio
+            if (esDeCliente && Publicacion.Tipo != "SERVICIO")
+            {
+                CambiarTipo("SERVICIO");
+            }
+        }
     }
 
     // Id del propietario elegido en la lista (empresa o cliente, según el interruptor)
@@ -375,6 +554,117 @@
 
         Notificar(nameof(Publicacion.Tipo));
     }
+
+    private void AbrirNuevaHabilidad()
+    {
+        // Por defecto, la categoría de la publicación
+        nuevaHabilidad = new Habilidad { IdCategoria = Publicacion.IdCategoria };
+        mostrarNuevaHabilidad = true;
+    }
+
+    private void CerrarNuevaHabilidad()
+    {
+        mostrarNuevaHabilidad = false;
+        nuevaHabilidad = new();
+    }
+
+    // POST /api/habilidades -> la habilidad nueva queda marcada solo en esta publicación
+    private async Task CrearHabilidadAsync()
+    {
+        var nombre = nuevaHabilidad.Nombre?.Trim();
+        if (string.IsNullOrWhiteSpace(nombre))
+        {
+            await swal.FireAsync("Falta el nombre", "Escribe el nombre de la habilidad.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        if (nuevaHabilidad.IdCategoria <= 0)
+        {
+            await swal.FireAsync("Falta la categoría", "Elige la categoría de la habilidad.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        // Si ya existe con ese nombre en esa categoría, solo se marca (RN14: no se repiten)
+        var existente = habilidades.FirstOrDefault(h => h.IdCategoria == nuevaHabilidad.IdCategoria
+            && string.Equals(h.Nombre?.Trim(), nombre, StringComparison.OrdinalIgnoreCase));
+        if (existente != null)
+        {
+            if (!HabilidadesSeleccionadas.Contains(existente.Id))
+            {
+                HabilidadesSeleccionadas.Add(existente.Id);
+            }
+
+            CerrarNuevaHabilidad();
+            await swal.FireAsync("Ya existía", $"La habilidad {existente.Nombre} ya estaba en la lista y quedó marcada.", SweetAlertIcon.Info);
+            return;
+        }
+
+        nuevaHabilidad.Nombre = nombre;
+        nuevaHabilidad.Descripcion = string.IsNullOrWhiteSpace(nuevaHabilidad.Descripcion)
+            ? $"Habilidad requerida en la publicación {Publicacion.Titulo}".Trim()
+            : nuevaHabilidad.Descripcion.Trim();
+        if (nuevaHabilidad.Descripcion.Length > 500)
+        {
+            nuevaHabilidad.Descripcion = nuevaHabilidad.Descripcion[..500];
+        }
+
+        creandoHabilidad = true;
+        var respuesta = await repository.PostAsync<Habilidad, Habilidad>("/api/habilidades", nuevaHabilidad);
+        creandoHabilidad = false;
+
+        if (respuesta.Error)
+        {
+            await swal.FireAsync("No se pudo agregar", await respuesta.GetErrorMessageAsync(), SweetAlertIcon.Error);
+            return;
+        }
+
+        var creada = respuesta.Response;
+        habilidades.Add(creada);
+        habilidades = habilidades.OrderBy(h => h.Nombre).ToList();
+        HabilidadesSeleccionadas.Add(creada.Id);
+        CerrarNuevaHabilidad();
+    }
+
+    // Agrega la pregunta a la lista; se guardan en el API cuando se crea la publicación
+    private async Task AgregarPreguntaAsync()
+    {
+        var texto = nuevaPregunta.Texto?.Trim();
+        if (string.IsNullOrWhiteSpace(texto))
+        {
+            await swal.FireAsync("Falta la pregunta", "Escribe el texto de la pregunta.", SweetAlertIcon.Warning);
+            return;
+        }
+
+        if (nuevaPregunta.TipoRespuesta == "OPCION_UNICA" && nuevaPregunta.ListaOpciones().Count < 2)
+        {
+            await swal.FireAsync("Faltan opciones", "Una pregunta de opción única necesita al menos dos opciones separadas por punto y coma (;).", SweetAlertIcon.Warning);
+            return;
+        }
+
+        if (Preguntas.Count >= 255)
+        {
+            return;
+        }
+
+        Preguntas.Add(new Pregunta
+        {
+            Texto = texto,
+            TipoRespuesta = nuevaPregunta.TipoRespuesta,
+            Opciones = nuevaPregunta.TipoRespuesta == "OPCION_UNICA" ? string.Join(";", nuevaPregunta.ListaOpciones()) : null,
+            Obligatoria = nuevaPregunta.Obligatoria
+        });
+
+        nuevaPregunta = new() { TipoRespuesta = "TEXTO", Obligatoria = true };
+    }
+
+    private static string NombreTipoPregunta(string tipo) => tipo switch
+    {
+        "TEXTO" => "Texto libre",
+        "SI_NO" => "Sí / No",
+        "NUMERO" => "Número",
+        "OPCION_UNICA" => "Opción única",
+        _ => tipo
+    };
 
     private void AlternarHabilidad(int idHabilidad)
     {

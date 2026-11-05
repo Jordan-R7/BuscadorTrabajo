@@ -1,5 +1,6 @@
 ﻿
 @page "/desarrolladores/edit/{Id:int}"
+@attribute [Authorize(Roles = "Admin,Desarrollador")]
 @inject IRepository repository
 @inject NavigationManager navigationManager
 @inject SweetAlertService swal

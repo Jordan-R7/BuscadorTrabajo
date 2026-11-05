@@ -1,6 +1,6 @@
 ﻿
 <div class="bt-form-card">
-    <EditForm Model="Datos" OnValidSubmit="OnContinuar">
+    <EditForm Model="Datos" OnValidSubmit="ContinuarAsync">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
@@ -67,6 +67,41 @@
             </div>
         </div>
 
+        @if (MostrarCuenta)
+        {
+            <div class="bt-form-section">
+                <h2 class="bt-form-section-title">Datos de acceso</h2>
+
+                <p class="bt-subtitle">
+                    Con tu correo y esta contraseña vas a iniciar sesión en SkillNet.
+                </p>
+
+                <div class="bt-form-grid">
+                    <div class="bt-field">
+                        <label class="bt-label">Contraseña</label>
+                        <InputText class="form-control"
+                                   type="password"
+                                   @bind-Value="Datos.Password"
+                                   placeholder="Mínimo 6 caracteres" />
+                        <ValidationMessage For="@(() => Datos.Password)" />
+                    </div>
+
+                    <div class="bt-field">
+                        <label class="bt-label">Confirmación de contraseña</label>
+                        <InputText class="form-control"
+                                   type="password"
+                                   @bind-Value="Datos.PasswordConfirm" />
+                        <ValidationMessage For="@(() => Datos.PasswordConfirm)" />
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorCuenta))
+                {
+                    <div class="validation-message">@errorCuenta</div>
+                }
+            </div>
+        }
+
         <div class="bt-form-actions">
             <button type="submit" class="bt-btn bt-btn-primary">
                 Continuar →
@@ -81,6 +116,28 @@
 
     [Parameter]
     public EventCallback OnContinuar { get; set; }
+
+    // true en el registro: pide la contraseña de la cuenta. En "Editar perfil" va en false.
+    [Parameter]
+    public bool MostrarCuenta { get; set; }
+
+    // Si es obligatoria (un administrador puede registrar a alguien sin crearle cuenta)
+    [Parameter]
+    public bool CuentaObligatoria { get; set; } = true;
+
+    private string errorCuenta;
+
+    private async Task ContinuarAsync()
+    {
+        errorCuenta = null;
+        if (MostrarCuenta && CuentaObligatoria && string.IsNullOrWhiteSpace(Datos.Password))
+        {
+            errorCuenta = "La contraseña es obligatoria.";
+            return;
+        }
+
+        await OnContinuar.InvokeAsync();
+    }
     private string FechaMaxima =>
         DateTime.Today.ToString("yyyy-MM-dd");
 }

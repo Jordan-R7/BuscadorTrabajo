@@ -46,6 +46,11 @@ namespace BuscadorTrabajo.Shared.Entities
         [Display(Name = "Activo")]
         public bool Activo { get; set; } = true;
 
+        // Usuario (cuenta de acceso) al que pertenece este registro.
+        // Puede ir vacío en registros creados por un administrador sin cuenta.
+        [MaxLength(450)]
+        public string UserId { get; set; }
+
         // Reglas que comparan varios campos
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

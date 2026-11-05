@@ -8,9 +8,16 @@
     <div class="bt-page-header">
         <div>
             <h1 class="bt-title">Aplicaciones</h1>
-            <p class="bt-subtitle">Postulaciones de los desarrolladores a ofertas de empleo y solicitudes de servicio.</p>
+            <p class="bt-subtitle">
+                <AuthorizeView Roles="Desarrollador" Context="auth">
+                    <Authorized>Tus postulaciones a ofertas de empleo y solicitudes de servicio.</Authorized>
+                    <NotAuthorized>Postulaciones que llegaron a tus publicaciones.</NotAuthorized>
+                </AuthorizeView>
+            </p>
         </div>
-        <a class="bt-btn bt-btn-primary" href="/aplicaciones/create">+ Nueva aplicación</a>
+        <AuthorizeView Roles="Admin,Desarrollador" Context="auth">
+            <a class="bt-btn bt-btn-primary" href="/aplicaciones/create">+ Nueva aplicación</a>
+        </AuthorizeView>
     </div>
 
     @if (aplicaciones is null)
@@ -101,8 +108,11 @@
                         </ul>
 
                         <div class="bt-card-foot">
-                            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/aplicaciones/edit/@aplicacion.Id">Editar / estado</a>
-                            <button class="bt-btn bt-btn-danger bt-btn-sm" @onclick="@(() => DeleteAsync(aplicacion))">Borrar</button>
+                            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/aplicaciones/edit/@aplicacion.Id">Ver / estado</a>
+                            @* Borrar solo lo puede hacer el administrador; los demás la retiran o la rechazan *@
+                            <AuthorizeView Roles="Admin" Context="auth">
+                                <button class="bt-btn bt-btn-danger bt-btn-sm" @onclick="@(() => DeleteAsync(aplicacion))">Borrar</button>
+                            </AuthorizeView>
                         </div>
                     </article>
                 }

@@ -90,14 +90,33 @@
                 </div>
             </div>
 
+            @if (cantidadPreguntas > 0)
+            {
+                <p class="bt-hint">Al aplicar se responden @cantidadPreguntas pregunta(s) del publicador.</p>
+            }
+
             <div class="bt-card-foot">
+                @* Aplicar: desarrolladores (y el administrador). Sin sesión se invita a entrar. *@
                 @if (publicacion.Estado == "PUBLICADA")
                 {
-                    <a class="bt-btn bt-btn-primary" href="/aplicaciones/create?publicacion=@publicacion.Id">Aplicar</a>
+                    if (puedeAplicar)
+                    {
+                        <a class="bt-btn bt-btn-primary" href="/aplicaciones/create?publicacion=@publicacion.Id">Aplicar</a>
+                    }
+                    else if (!autenticado)
+                    {
+                        <a class="bt-btn bt-btn-primary" href="/Login">Inicia sesión para aplicar</a>
+                    }
                 }
-                <a class="bt-btn bt-btn-soft" href="/aplicaciones?publicacion=@publicacion.Id">Ver aplicaciones</a>
-                <button class="bt-btn bt-btn-danger" @onclick="DeleteAsync">Borrar</button>
-                <a class="bt-btn bt-btn-ghost" href="/publicaciones/edit/@publicacion.Id">Editar publicación</a>
+
+                @* Gestionar: solo el dueño de la publicación o un administrador *@
+                @if (puedeGestionar)
+                {
+                    <a class="bt-btn bt-btn-soft" href="/aplicaciones?publicacion=@publicacion.Id">Ver aplicaciones</a>
+                    <a class="bt-btn bt-btn-soft" href="/publicaciones/@publicacion.Id/preguntas">Preguntas</a>
+                    <button class="bt-btn bt-btn-danger" @onclick="DeleteAsync">Borrar</button>
+                    <a class="bt-btn bt-btn-ghost" href="/publicaciones/edit/@publicacion.Id">Editar publicación</a>
+                }
             </div>
         </article>
     }
@@ -109,8 +128,17 @@
     private string categoria = "";
     private List<string> habilidades = new();
 
+    // Permisos según el usuario conectado
+    private bool autenticado;
+    private bool puedeAplicar;
+    private bool puedeGestionar;
+    private int cantidadPreguntas;
+
     [Parameter]
     public int Id { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -162,6 +190,19 @@
                 .OrderBy(n => n)
                 .ToList();
         }
+
+        // Preguntas que se responden al aplicar
+        var respuestaPreguntas = await repository.GetAsync<List<Pregunta>>($"/api/preguntas?publicacion={Id}");
+        cantidadPreguntas = respuestaPreguntas.Error ? 0 : respuestaPreguntas.Response.Count;
+
+        // Qué puede hacer el usuario conectado. El token trae el rol y el Id de su registro (IdRegistro).
+        var usuario = (await authenticationStateTask).User;
+        autenticado = usuario.Identity?.IsAuthenticated == true;
+        puedeAplicar = usuario.IsInRole("Desarrollador") || usuario.IsInRole("Admin");
+        int.TryParse(usuario.FindFirst("IdRegistro")?.Value, out var idRegistro);
+        puedeGestionar = usuario.IsInRole("Admin")
+            || (usuario.IsInRole("Empresa") && datos.IdEmpresa == idRegistro)
+            || (usuario.IsInRole("Cliente") && datos.IdCliente == idRegistro);
 
         publicacion = datos;
     }

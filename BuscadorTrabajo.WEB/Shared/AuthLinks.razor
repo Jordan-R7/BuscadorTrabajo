@@ -1,0 +1,54 @@
+@inject HttpClient http
+
+@* Parte derecha de la barra superior: muestra quién está conectado o los botones para entrar *@
+<AuthorizeView>
+    <Authorized>
+        <div class="bt-auth-links">
+            <a class="bt-auth-user" href="/cuenta" title="Mi cuenta">
+                <strong>@Nombre(context)</strong>
+                <span>@Rol(context)</span>
+            </a>
+            <a class="bt-auth-avatar" href="/cuenta" title="Mi cuenta (@context.User.Identity?.Name)">
+                @if (!string.IsNullOrEmpty(FotoId(context)))
+                {
+                    <img src="@($"{http.BaseAddress}api/imagenes/{FotoId(context)}")" alt="Foto de perfil" />
+                }
+                else
+                {
+                    <text>@Iniciales(context)</text>
+                }
+            </a>
+            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/Logout">Cerrar sesión</a>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="bt-auth-links">
+            <a class="bt-btn bt-btn-ghost bt-btn-sm" href="/Register">Crear cuenta</a>
+            <a class="bt-btn bt-btn-primary bt-btn-sm" href="/Login">Iniciar sesión</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private static string Nombre(AuthenticationState estado)
+    {
+        var nombre = estado.User.FindFirst("NombreCompleto")?.Value;
+        return string.IsNullOrWhiteSpace(nombre) ? estado.User.Identity?.Name : nombre;
+    }
+
+    private static string Rol(AuthenticationState estado)
+    {
+        var rol = estado.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+        return rol == "Admin" ? "Administrador" : rol;
+    }
+
+    // Id de la foto de perfil que viene en el token (vacío si no tiene)
+    private static string FotoId(AuthenticationState estado) => estado.User.FindFirst("FotoId")?.Value;
+
+    // Iniciales para el círculo: "Ana Gómez" -> "AG"
+    private static string Iniciales(AuthenticationState estado)
+    {
+        var partes = (Nombre(estado) ?? "?").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(partes.Take(2).Select(p => char.ToUpper(p[0])));
+    }
+}

@@ -1,6 +1,8 @@
 ﻿using BuscadorTrabajo.API.Data;
 using BuscadorTrabajo.API.Helpers;
 using BuscadorTrabajo.Shared.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +10,7 @@ namespace BuscadorTrabajo.API.Controllers
 {
     [ApiController]
     [Route("/api/publicaciones_habilidades")]
+    // Consultar (GET) es público; crear, editar y borrar requiere iniciar sesión con rol Admin, Empresa, Cliente
     public class Publicaciones_HabilidadesController : ControllerBase
     {
         private readonly DataContext _context;
@@ -75,10 +78,16 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // POST /api/publicaciones_habilidades
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Empresa,Cliente")]
         [HttpPost]
         public async Task<ActionResult> Post(Publicacion_Habilidad publicacionHabilidad)
         {
             publicacionHabilidad.Id = 0; // El Id lo genera la base de datos
+
+            if (!await PuedeGestionarAsync(publicacionHabilidad.IdPublicacion))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Solo el dueño de la publicación puede cambiar sus habilidades."); //403
+            }
 
             var error = await ValidarAsync(publicacionHabilidad);
             if (error != null)
@@ -99,13 +108,19 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // PUT /api/publicaciones_habilidades
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Empresa,Cliente")]
         [HttpPut]
         public async Task<ActionResult> Put(Publicacion_Habilidad publicacionHabilidad)
         {
-            var existe = await _context.Publicaciones_Habilidades.AnyAsync(x => x.Id == publicacionHabilidad.Id);
-            if (!existe)
+            var actual = await _context.Publicaciones_Habilidades.AsNoTracking().FirstOrDefaultAsync(x => x.Id == publicacionHabilidad.Id);
+            if (actual == null)
             {
                 return NotFound("No existe esa asignación de habilidad."); //404
+            }
+
+            if (!await PuedeGestionarAsync(actual.IdPublicacion) || !await PuedeGestionarAsync(publicacionHabilidad.IdPublicacion))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Solo el dueño de la publicación puede cambiar sus habilidades."); //403
             }
 
             var error = await ValidarAsync(publicacionHabilidad);
@@ -127,6 +142,7 @@ namespace BuscadorTrabajo.API.Controllers
         }
 
         // DELETE /api/publicaciones_habilidades/5
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Empresa,Cliente")]
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {
@@ -134,6 +150,11 @@ namespace BuscadorTrabajo.API.Controllers
             if (publicacionHabilidad == null)
             {
                 return NotFound("No existe esa asignación de habilidad."); //404
+            }
+
+            if (!await PuedeGestionarAsync(publicacionHabilidad.IdPublicacion))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Solo el dueño de la publicación puede cambiar sus habilidades."); //403
             }
 
             try
@@ -146,6 +167,14 @@ namespace BuscadorTrabajo.API.Controllers
             {
                 return Conflict("No se puede eliminar la asignación."); //409
             }
+        }
+
+        // true si el usuario es dueño de la publicación o administrador.
+        // Si la publicación no existe se deja pasar: ValidarAsync responde el error 400 correspondiente.
+        private async Task<bool> PuedeGestionarAsync(int idPublicacion)
+        {
+            var publicacion = await _context.Publicaciones.AsNoTracking().FirstOrDefaultAsync(x => x.Id == idPublicacion);
+            return publicacion == null || User.EsDuenoPublicacion(publicacion);
         }
 
         // Reglas que necesitan consultar la base de datos antes de guardar.

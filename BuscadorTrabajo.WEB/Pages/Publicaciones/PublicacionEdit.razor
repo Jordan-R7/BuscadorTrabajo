@@ -1,4 +1,5 @@
 ﻿@page "/publicaciones/edit/{Id:int}"
+@attribute [Authorize(Roles = "Admin,Empresa,Cliente")]
 @inject IRepository repository
 @inject NavigationManager navigationManager
 @inject SweetAlertService swal

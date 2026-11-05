@@ -74,7 +74,9 @@
         }
     }
 
-    <a class="bt-fab" href="/publicaciones/create">+ Crear publicación</a>
+    <AuthorizeView Roles="Admin,Empresa,Cliente" Context="auth">
+        <a class="bt-fab" href="/publicaciones/create">+ Crear publicación</a>
+    </AuthorizeView>
 </div>
 
 @code {

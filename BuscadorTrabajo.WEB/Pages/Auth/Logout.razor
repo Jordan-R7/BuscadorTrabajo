@@ -1,0 +1,47 @@
+@page "/Logout"
+@inject ILoginService loginService
+@inject NavigationManager navigationManager
+@inject SweetAlertService swal
+@inject IJSRuntime js
+
+<PageTitle>Cerrar sesión | SkillNet</PageTitle>
+
+<div class="bt-loading-card">
+    <div class="bt-spinner"></div>
+    <p>@mensaje</p>
+</div>
+
+@code {
+    private string mensaje = "Cerrar sesión...";
+
+    // Antes de cerrar la sesión pregunta si la persona está segura.
+    // Si cancela, vuelve a la página donde estaba.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var result = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "¿Cerrar sesión?",
+            Text = "Tendrás que volver a ingresar tu correo y contraseña para entrar.",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Sí, cerrar sesión",
+            CancelButtonText = "Cancelar"
+        });
+
+        if (string.IsNullOrEmpty(result.Value))
+        {
+            await js.InvokeVoidAsync("history.back");
+            return;
+        }
+
+        mensaje = "Cerrando sesión...";
+        StateHasChanged();
+        await loginService.LogoutAsync();
+        navigationManager.NavigateTo("/");
+    }
+}

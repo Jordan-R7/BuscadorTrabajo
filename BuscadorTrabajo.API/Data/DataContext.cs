@@ -1,9 +1,12 @@
 ﻿using BuscadorTrabajo.Shared.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BuscadorTrabajo.API.Data
 {
-    public class DataContext : DbContext
+    // IdentityDbContext<User> agrega las tablas de seguridad de ASP.NET Identity:
+    // AspNetUsers (usuarios), AspNetRoles (roles), AspNetUserRoles (usuario-rol), etc.
+    public class DataContext : IdentityDbContext<User>
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
@@ -23,6 +26,9 @@ namespace BuscadorTrabajo.API.Data
         public DbSet<Perfil_Habilidad> Perfiles_Habilidades { get; set; }
         public DbSet<Publicacion> Publicaciones { get; set; }
         public DbSet<Publicacion_Habilidad> Publicaciones_Habilidades { get; set; }
+        public DbSet<Pregunta> Preguntas { get; set; }
+        public DbSet<Respuesta> Respuestas { get; set; }
+        public DbSet<Imagen> Imagenes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,6 +44,7 @@ namespace BuscadorTrabajo.API.Data
             modelBuilder.Entity<Perfil_Habilidad>().HasIndex(x => new { x.IdPerfilProfesional, x.IdHabilidad }).IsUnique();  // RN15
             modelBuilder.Entity<Publicacion_Habilidad>().HasIndex(x => new { x.IdPublicacion, x.IdHabilidad }).IsUnique();   // RN15
             modelBuilder.Entity<Aplicacion>().HasIndex(x => new { x.IdPublicacion, x.IdDesarrollador }).IsUnique();          // RN28
+            modelBuilder.Entity<Respuesta>().HasIndex(x => new { x.IdAplicacion, x.IdPregunta }).IsUnique();                 // RN54
 
             // ---------- Relaciones ----------
             // Las llaves foráneas se llaman IdXxx, por eso cada relación se declara aquí.
@@ -120,6 +127,43 @@ namespace BuscadorTrabajo.API.Data
                 .HasOne(x => x.Desarrollador).WithMany()
                 .HasForeignKey(x => x.IdDesarrollador)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Publicacion 1 - N Pregunta (RN50). Al borrar la publicación se borran sus preguntas.
+            modelBuilder.Entity<Pregunta>()
+                .HasOne(x => x.Publicacion).WithMany()
+                .HasForeignKey(x => x.IdPublicacion)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Aplicacion 1 - N Respuesta y Pregunta 1 - N Respuesta (RN52)
+            // Al borrar la aplicación se borran sus respuestas; una pregunta ya respondida no se puede borrar.
+            modelBuilder.Entity<Respuesta>()
+                .HasOne(x => x.Aplicacion).WithMany(x => x.Respuestas)
+                .HasForeignKey(x => x.IdAplicacion)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Respuesta>()
+                .HasOne(x => x.Pregunta).WithMany()
+                .HasForeignKey(x => x.IdPregunta)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ---------- Cuenta de usuario de cada rol ----------
+            // Administrador, Empresa, Cliente y Desarrollador guardan el Id de su usuario (AspNetUsers).
+            // Un usuario solo puede estar vinculado a un registro (índice único).
+            modelBuilder.Entity<Administrador>().HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Empresa>().HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Cliente>().HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Desarrollador>().HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Administrador>().HasIndex(x => x.UserId).IsUnique();
+            modelBuilder.Entity<Empresa>().HasIndex(x => x.UserId).IsUnique();
+            modelBuilder.Entity<Cliente>().HasIndex(x => x.UserId).IsUnique();
+            modelBuilder.Entity<Desarrollador>().HasIndex(x => x.UserId).IsUnique();
+
+            // Foto de perfil: el usuario guarda el Id de su imagen (o NULL si no tiene).
+            // Si se borra la imagen, FotoId vuelve a NULL.
+            modelBuilder.Entity<User>()
+                .HasOne<Imagen>().WithMany()
+                .HasForeignKey(x => x.FotoId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // ---------- Valores de dinero: 18 dígitos, 2 decimales ----------
             modelBuilder.Entity<Publicacion>().Property(x => x.Salario).HasPrecision(18, 2);

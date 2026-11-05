@@ -26,6 +26,7 @@
 
             <nav class="menu-links">
 
+                @* Público: cualquiera puede ver las publicaciones *@
                 <NavLink href="/"
                          Match="NavLinkMatch.All"
                          class="menu-link"
@@ -34,52 +35,92 @@
                 </NavLink>
 
                 <NavLink href="/publicaciones"
+                         Match="NavLinkMatch.All"
                          class="menu-link"
                          @onclick="CloseMenu">
                     <span>▤</span> Publicaciones
                 </NavLink>
 
-                <NavLink href="/aplicaciones"
-                         class="menu-link"
-                         @onclick="CloseMenu">
-                    <span>➤</span> Aplicaciones
-                </NavLink>
+                <AuthorizeView>
+                    <Authorized>
+                        <NavLink href="/aplicaciones"
+                                 class="menu-link"
+                                 @onclick="CloseMenu">
+                            <span>➤</span> Aplicaciones
+                        </NavLink>
+                    </Authorized>
+                    <NotAuthorized>
+                        <div class="menu-divider"></div>
 
-                <NavLink href="/desarrolladores/registro"
-                         class="menu-link"
-                         @onclick="CloseMenu">
-                    <span>♙</span> Registrarme como desarrollador
-                </NavLink>
+                        <span class="menu-section-title">
+                            Mi cuenta
+                        </span>
 
-                <div class="menu-divider"></div>
+                        <NavLink href="/Login" class="menu-link" @onclick="CloseMenu">
+                            <span>→</span> Iniciar sesión
+                        </NavLink>
 
-                <span class="menu-section-title">
-                    Administración
-                </span>
+                        <NavLink href="/Register" class="menu-link" @onclick="CloseMenu">
+                            <span>+</span> Crear cuenta
+                        </NavLink>
+                    </NotAuthorized>
+                </AuthorizeView>
 
-                <NavLink href="/categorias" class="menu-link" @onclick="CloseMenu">
-                    Categorías
-                </NavLink>
+                @* Empresas y clientes publican; también el administrador *@
+                <AuthorizeView Roles="Admin,Empresa,Cliente">
+                    <NavLink href="/publicaciones/create" class="menu-link" @onclick="CloseMenu">
+                        <span>✚</span> Nueva publicación
+                    </NavLink>
+                </AuthorizeView>
 
-                <NavLink href="/habilidades" class="menu-link" @onclick="CloseMenu">
-                    Habilidades
-                </NavLink>
+                @* Solo el administrador ve la administración *@
+                <AuthorizeView Roles="Admin">
+                    <div class="menu-divider"></div>
 
-                <NavLink href="/empresas" class="menu-link" @onclick="CloseMenu">
-                    Empresas
-                </NavLink>
+                    <span class="menu-section-title">
+                        Administración
+                    </span>
 
-                <NavLink href="/clientes" class="menu-link" @onclick="CloseMenu">
-                    Clientes
-                </NavLink>
+                    <NavLink href="/categorias" class="menu-link" @onclick="CloseMenu">
+                        Categorías
+                    </NavLink>
 
-                <NavLink href="/desarrolladores" Match="NavLinkMatch.All" class="menu-link" @onclick="CloseMenu">
-                    Desarrolladores
-                </NavLink>
+                    <NavLink href="/habilidades" class="menu-link" @onclick="CloseMenu">
+                        Habilidades
+                    </NavLink>
 
-                <NavLink href="/administradores" class="menu-link" @onclick="CloseMenu">
-                    Administradores
-                </NavLink>
+                    <NavLink href="/empresas" class="menu-link" @onclick="CloseMenu">
+                        Empresas
+                    </NavLink>
+
+                    <NavLink href="/clientes" class="menu-link" @onclick="CloseMenu">
+                        Clientes
+                    </NavLink>
+
+                    <NavLink href="/desarrolladores" Match="NavLinkMatch.All" class="menu-link" @onclick="CloseMenu">
+                        Desarrolladores
+                    </NavLink>
+
+                    <NavLink href="/administradores" class="menu-link" @onclick="CloseMenu">
+                        Administradores
+                    </NavLink>
+
+                    <NavLink href="/Register" class="menu-link" @onclick="CloseMenu">
+                        Crear cuenta de usuario
+                    </NavLink>
+                </AuthorizeView>
+
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="menu-divider"></div>
+                        <NavLink href="/cuenta" class="menu-link" @onclick="CloseMenu">
+                            <span>☺</span> Mi cuenta
+                        </NavLink>
+                        <NavLink href="/Logout" class="menu-link" @onclick="CloseMenu">
+                            <span>⎋</span> Cerrar sesión
+                        </NavLink>
+                    </Authorized>
+                </AuthorizeView>
 
             </nav>
 

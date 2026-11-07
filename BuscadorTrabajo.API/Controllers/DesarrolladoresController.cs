@@ -313,7 +313,7 @@ namespace BuscadorTrabajo.API.Controllers
                     Apellido = registro.DatosPersonales.Apellido,
                     Celular = registro.DatosPersonales.Celular,
                     Correo = registro.DatosPersonales.Correo,
-                    FechaNacimiento = registro.DatosPersonales.FechaNacimiento
+                    FechaNacimiento = registro.DatosPersonales.FechaNacimiento!.Value
                 };
 
                 _context.Desarrolladores.Add(desarrollador);
@@ -587,7 +587,7 @@ namespace BuscadorTrabajo.API.Controllers
                 desarrollador.Apellido = registro.DatosPersonales.Apellido;
                 desarrollador.Celular = registro.DatosPersonales.Celular;
                 desarrollador.Correo = registro.DatosPersonales.Correo;
-                desarrollador.FechaNacimiento = registro.DatosPersonales.FechaNacimiento;
+                desarrollador.FechaNacimiento = registro.DatosPersonales.FechaNacimiento!.Value;
 
                 // 12. Actualizar el perfil profesional.
                 perfil.TituloProfesional = registro.PerfilProfesional.TituloProfesional;

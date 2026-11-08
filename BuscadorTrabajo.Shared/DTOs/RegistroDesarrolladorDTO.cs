@@ -35,12 +35,11 @@ namespace BuscadorTrabajo.Shared.DTOs
         public string Cedula { get; set; }
 
         [Required(ErrorMessage = "El nombre es obligatorio.")]
-        [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "El nombre solo puede contener letras")]
+        [RegularExpression(@"^[\p{L}\p{M}\s'-]+$", ErrorMessage = "El nombre solo puede contener letras.")]
         [MaxLength(100)]
         public string Nombre { get; set; }
-
         [Required(ErrorMessage = "El apellido es obligatorio.")]
-        [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "El apellido solo puede contener letras")]
+        [RegularExpression(@"^[\p{L}\p{M}\s'-]+$", ErrorMessage = "El apellido solo puede contener letras.")]
         [MaxLength(100)]
         public string Apellido { get; set; }
 

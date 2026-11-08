@@ -35,10 +35,11 @@ namespace BuscadorTrabajo.Shared.DTOs
         public string Cedula { get; set; }
 
         [Required(ErrorMessage = "El nombre es obligatorio.")]
+        [RegularExpression(@"^[\p{L}\p{M}\s'-]+$", ErrorMessage = "El nombre solo puede contener letras.")]
         [MaxLength(100)]
         public string Nombre { get; set; }
-
         [Required(ErrorMessage = "El apellido es obligatorio.")]
+        [RegularExpression(@"^[\p{L}\p{M}\s'-]+$", ErrorMessage = "El apellido solo puede contener letras.")]
         [MaxLength(100)]
         public string Apellido { get; set; }
 
@@ -53,7 +54,7 @@ namespace BuscadorTrabajo.Shared.DTOs
         public string Correo { get; set; }
 
         [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
-        public DateOnly FechaNacimiento { get; set; }
+        public DateOnly? FechaNacimiento { get; set; }
 
         // Contraseña de la cuenta. Solo se pide al registrarse (en "Editar perfil" va vacía);
         // la obligatoriedad la revisa el asistente y el endpoint registro-completo.
@@ -67,13 +68,13 @@ namespace BuscadorTrabajo.Shared.DTOs
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            if (FechaNacimiento == default)
+            if (!FechaNacimiento.HasValue || FechaNacimiento.Value == default)
             {
                 yield return new ValidationResult(
                     "La fecha de nacimiento es obligatoria.",
                     new[] { nameof(FechaNacimiento) });
             }
-            else if (FechaNacimiento > DateOnly.FromDateTime(DateTime.Today))
+            else if (FechaNacimiento.Value > DateOnly.FromDateTime(DateTime.Today))
             {
                 yield return new ValidationResult(
                     "La fecha de nacimiento no puede ser futura.",

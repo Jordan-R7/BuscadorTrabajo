@@ -13,6 +13,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("SkillNetFrontend", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+
+
+
 // Swagger con el botón "Authorize" para probar los endpoints protegidos con el token JWT
 builder.Services.AddSwaggerGen(options =>
 {
@@ -97,11 +114,7 @@ app.UseSwaggerUI(options =>
 app.UseHttpsRedirection();
 
 // Permite que la aplicación Blazor (otro puerto) consuma el API
-app.UseCors(x => x
-    .AllowAnyMethod()
-    .AllowAnyHeader()
-    .SetIsOriginAllowed(origin => true)
-    .AllowCredentials());
+app.UseCors("SkillNetFrontend");
 
 // Primero se identifica quién es (token) y luego se revisa qué puede hacer (roles)
 app.UseAuthentication();

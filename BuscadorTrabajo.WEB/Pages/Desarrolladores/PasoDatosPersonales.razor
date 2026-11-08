@@ -58,8 +58,9 @@
 
                 <div class="bt-field bt-field-full">
                     <label class="bt-label">Fecha de nacimiento</label>
-                    <InputDate TValue="DateOnly"
+                    <InputDate TValue="DateOnly?"
                                class="form-control"
+                               min="@FechaMinima"
                                max="@FechaMaxima"
                                @bind-Value="Datos.FechaNacimiento" />
                     <ValidationMessage For="@(() => Datos.FechaNacimiento)" />
@@ -138,6 +139,7 @@
 
         await OnContinuar.InvokeAsync();
     }
+    private string FechaMinima => "1900-01-01";
     private string FechaMaxima =>
         DateTime.Today.ToString("yyyy-MM-dd");
 }
